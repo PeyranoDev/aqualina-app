@@ -1,39 +1,60 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
+import { useEffect, useState } from 'react';
+import { Slot, Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+import { supabase } from '../lib/supabase';
+import { Session } from '@supabase/supabase-js';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+    // Verificar sesión actual
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoading(false);
+    });
 
-  if (!loaded) {
+    // Escuchar cambios en la autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        router.replace('/');
+      } else {
+        router.replace('/login');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Mostrar pantalla de carga mientras se verifica la autenticación
+  if (isLoading) {
     return null;
   }
 
+  // Si no hay sesión, mostrar la pantalla de login
+  if (!session) {
+    return (
+      <>
+        <StatusBar style="auto" />
+        <Stack>
+          <Stack.Screen
+            name="login"
+            options={{
+              headerShown: false,
+            }}
+          />
+        </Stack>
+      </>
+    );
+  }
+
+  // Si hay sesión, mostrar la aplicación principal
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
+    <>
       <StatusBar style="auto" />
-    </ThemeProvider>
+      <Slot />
+    </>
   );
 }

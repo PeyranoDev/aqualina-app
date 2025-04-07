@@ -1,43 +1,57 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
+import { Tabs } from 'expo-router/tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'react-native';
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+// Definir el tipo para la función tabBarIcon
+type TabBarIconProps = {
+  color: string;
+  size: number;
+};
 
-export default function TabLayout() {
+export default function TabsLayout() {
   const colorScheme = useColorScheme();
-
+  
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: colorScheme === 'dark' ? '#fff' : '#0066cc',
+        tabBarInactiveTintColor: colorScheme === 'dark' ? '#888' : '#999',
         headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Noticias',
+          tabBarIcon: ({ color, size }: TabBarIconProps) => (
+            <Ionicons name="newspaper-outline" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="garage"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Garage',
+          tabBarIcon: ({ color, size }: TabBarIconProps) => (
+            <Ionicons name="car-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="amenities"
+        options={{
+          title: 'Reservas',
+          tabBarIcon: ({ color, size }: TabBarIconProps) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color, size }: TabBarIconProps) => (
+            <Ionicons name="person-outline" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>
