@@ -1,21 +1,17 @@
 import { Tabs } from 'expo-router/tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { useColorScheme } from 'react-native';
 
-// Definir el tipo para la función tabBarIcon
 type TabBarIconProps = {
   color: string;
   size: number;
 };
 
 export default function TabsLayout() {
-  const colorScheme = useColorScheme();
-  
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colorScheme === 'dark' ? '#fff' : '#0066cc',
-        tabBarInactiveTintColor: colorScheme === 'dark' ? '#888' : '#999',
+        tabBarActiveTintColor: '#000',
+        tabBarInactiveTintColor: '#888',
         headerShown: false,
       }}>
       <Tabs.Screen
