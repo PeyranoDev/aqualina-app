@@ -158,7 +158,6 @@ export default function ProfileScreen() {
     }
   };
 
-  // Función para cerrar sesión
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();

@@ -1,5 +1,13 @@
 {
   "expo": {
+    "androidNavigationBar": {
+      "visible": "sticky-immersive",
+      "barStyle": "dark-content",
+      "backgroundColor": "#00000000"
+    },
+    "androidStatusBar" : {
+      "hidden": true
+    },
     "name": "aqualina-app",
     "slug": "aqualina-app",
     "version": "1.0.0",
@@ -34,9 +42,6 @@
         }
       ],
       "expo-secure-store"
-    ],
-    "experiments": {
-      "typedRoutes": true
-    }
+    ]
   }
 }

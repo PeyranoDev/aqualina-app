@@ -22,8 +22,7 @@ export default function LoginScreen() {
       });
 
       if (error) throw error;
-      
-      // Si el login es exitoso, el listener en _layout.tsx redirigirá automáticamente
+
     } catch (error) {
         if (error instanceof Error) {
         Alert.alert('Error de inicio de sesión', error.message);
@@ -37,7 +36,7 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.logoContainer}>
         <Image 
-          source={{ uri: 'https://via.placeholder.com/150?text=Aqualina' }} 
+          source={{ uri: 'https://i.imgur.com/He6OT86.png' }} 
           style={styles.logo} 
         />
         <Text style={styles.title}>Torre Aqualina</Text>

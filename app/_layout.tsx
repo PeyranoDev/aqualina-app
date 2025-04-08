@@ -1,44 +1,127 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+} from 'react-native';
 import { Slot, router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { supabase } from '../lib/supabase';
-import { Session } from '@supabase/supabase-js';
+import { Platform, StatusBar } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as SystemUI from 'expo-system-ui';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as NavigationBar from 'expo-navigation-bar';
+
+
+const phrases = [
+  "Preparando tu espacio de bienestar...",
+  "Conectando con tu comunidad...",
+  "Organizando la comodidad del hogar...",
+  "Tu día comienza con Aqualina...",
+  "Optimizando tu experiencia residencial...",
+  "Trayendo calma a tu rutina...",
+];
 
 export default function RootLayout() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [session, setSession] = useState(null);
+  const [randomPhrase] = useState(() => {
+    const index = Math.floor(Math.random() * phrases.length);
+    return phrases[index];
+  });
+
+  
+  const paddingTop = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
+
+  const [fadeSplash] = useState(new Animated.Value(1));
+  const [fadeContent] = useState(new Animated.Value(0));
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.08,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      setIsLoading(false);
+      setSessionChecked(true);
 
-      if (!session) {
-        router.replace('/login');
-      }
-    });
+      setTimeout(() => {
+        Animated.timing(fadeSplash, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }).start();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+        Animated.timing(fadeContent, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }).start();
 
-      if (session) {
-        router.replace('/(tabs)');
-      } else {
-        router.replace('/login');
-      }
-    });
+        if (session) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/login');
+        }
+      }, 3000);
+    };
 
-    return () => subscription.unsubscribe();
+    init();
   }, []);
 
-  if (isLoading) {
-    return null;
-  }
-
   return (
-    <>
-      <StatusBar style="auto" />
-      <Slot /> 
-    </>
+    <SafeAreaProvider>
+      <View style={{ flex: 1, paddingTop, backgroundColor: '#c2e9fb' }}>
+
+        {/* Contenido principal */}
+        <Animated.View style={{ flex: 1, opacity: fadeContent }}>
+          <Slot />
+        </Animated.View>
+
+        {/* Splash screen */}
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { opacity: fadeSplash, zIndex: 10 }]}
+        >
+          <LinearGradient
+            colors={['#a1c4fd', '#c2e9fb']}
+            style={styles.splashContainer}
+          >
+            <Animated.Text style={[styles.title, { transform: [{ scale: scaleAnim }] }]}>
+              {randomPhrase}
+            </Animated.Text>
+          </LinearGradient>
+        </Animated.View>
+      </View>
+    </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  splashContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '500',
+    color: '#2c3e50',
+    textAlign: 'center',
+  },
+});
