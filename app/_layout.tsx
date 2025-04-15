@@ -4,15 +4,13 @@ import {
   Text,
   StyleSheet,
   Animated,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { Slot, router } from 'expo-router';
-import { supabase } from '../lib/supabase';
-import { Platform, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as SystemUI from 'expo-system-ui';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import * as NavigationBar from 'expo-navigation-bar';
-
+import { authService } from '../services/auth-service';
 
 const phrases = [
   "Preparando tu espacio de bienestar...",
@@ -24,14 +22,11 @@ const phrases = [
 ];
 
 export default function RootLayout() {
-  const [sessionChecked, setSessionChecked] = useState(false);
-  const [session, setSession] = useState(null);
   const [randomPhrase] = useState(() => {
     const index = Math.floor(Math.random() * phrases.length);
     return phrases[index];
   });
 
-  
   const paddingTop = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
 
   const [fadeSplash] = useState(new Animated.Value(1));
@@ -55,29 +50,32 @@ export default function RootLayout() {
     ).start();
 
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setSessionChecked(true);
+      try {
+        const isAuth = await authService.isAuthenticated();
 
-      setTimeout(() => {
-        Animated.timing(fadeSplash, {
-          toValue: 0,
-          duration: 600,
-          useNativeDriver: true,
-        }).start();
+        setTimeout(() => {
+          Animated.timing(fadeSplash, {
+            toValue: 0,
+            duration: 600,
+            useNativeDriver: true,
+          }).start();
 
-        Animated.timing(fadeContent, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }).start();
+          Animated.timing(fadeContent, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }).start();
 
-        if (session) {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/login');
-        }
-      }, 3000);
+          if (isAuth) {
+            router.replace('/(tabs)');
+          } else {
+            router.replace('/login');
+          }
+        }, 3000);
+      } catch (error) {
+        console.error('Error al verificar sesión:', error);
+        router.replace('/login');
+      }
     };
 
     init();
@@ -86,7 +84,6 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <View style={{ flex: 1, paddingTop, backgroundColor: '#c2e9fb' }}>
-
         {/* Contenido principal */}
         <Animated.View style={{ flex: 1, opacity: fadeContent }}>
           <Slot />

@@ -1,32 +1,37 @@
 import { useState } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../lib/supabase';
+import { router } from 'expo-router';
+import { authService, LoginCredentials } from '../services/auth-service';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [credentials, setCredentials] = useState<LoginCredentials>({
+    email: '',
+    password: '',
+  });
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!credentials.email || !credentials.password) {
       Alert.alert('Error', 'Por favor ingrese email y contraseña');
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const user = await authService.login(credentials);
 
-      if (error) throw error;
-
+      if (user) {
+        router.replace('/');
+      } else {
+        Alert.alert('Error de inicio de sesión', 'Credenciales inválidas');
+      }
     } catch (error) {
-        if (error instanceof Error) {
+      if (error instanceof Error) {
         Alert.alert('Error de inicio de sesión', error.message);
-        }
+      } else {
+        Alert.alert('Error de inicio de sesión', 'Error desconocido');
+      }
     } finally {
       setLoading(false);
     }
@@ -41,21 +46,21 @@ export default function LoginScreen() {
         />
         <Text style={styles.title}>Torre Aqualina</Text>
       </View>
-      
+
       <View style={styles.formContainer}>
         <TextInput
           style={styles.input}
           placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
+          value={credentials.email}
+          onChangeText={(text) => setCredentials({ ...credentials, email: text })}
           autoCapitalize="none"
           keyboardType="email-address"
         />
         <TextInput
           style={styles.input}
           placeholder="Contraseña"
-          value={password}
-          onChangeText={setPassword}
+          value={credentials.password}
+          onChangeText={(text) => setCredentials({ ...credentials, password: text })}
           secureTextEntry
         />
         <TouchableOpacity 

@@ -2,40 +2,22 @@ import { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../../lib/supabase';
-
-// Tipo para los vehículos
-type Vehicle = {
-  id: string;
-  plate: string;
-  model: string;
-  color: string;
-  is_parked: boolean;
-};
+import { vehicleService, Vehicle, VehicleRequest } from '../../services/vehicle-service';
 
 export default function GarageScreen() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [requestLoading, setRequestLoading] = useState<string | null>(null);
 
-  // Función para cargar vehículos desde Supabase
+  // Función para cargar vehículos
   const fetchVehicles = async () => {
     try {
-      const { data, error } = await supabase
-        .from('vehicles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        setVehicles(data);
-      }
-    } catch (error : any) {
-        console.error('Error fetching vehicles:', error.message);
-        Alert.alert('Error', 'No se pudieron cargar los vehículos');
+      setLoading(true);
+      const data = await vehicleService.getUserVehicles();
+      setVehicles(data);
+    } catch (error) {
+      console.error('Error fetching vehicles:', error.message);
+      Alert.alert('Error', 'No se pudieron cargar los vehículos');
     } finally {
       setLoading(false);
     }
@@ -50,29 +32,19 @@ export default function GarageScreen() {
   const requestVehicle = async (vehicle: Vehicle) => {
     setRequestLoading(vehicle.id);
     try {
-      // Obtener el ID del usuario actual
-      const { data: { user } } = await supabase.auth.getUser();
+      const request = await vehicleService.requestVehicle(vehicle.id);
       
-      if (!user) throw new Error('Usuario no autenticado');
-
-      // Crear una nueva solicitud
-      const { error } = await supabase
-        .from('vehicle_requests')
-        .insert({
-          vehicle_id: vehicle.id,
-          user_id: user.id,
-          status: 'pending'
-        });
-
-      if (error) throw error;
-
-      Alert.alert(
-        'Solicitud enviada', 
-        'Seguridad ha sido notificado y preparará su vehículo.'
-      );
-    } catch (error : any) {
-        console.error('Error requesting vehicle:', error.message);
-        Alert.alert('Error', 'No se pudo enviar la solicitud');
+      if (request) {
+        Alert.alert(
+          'Solicitud enviada', 
+          'Seguridad ha sido notificado y preparará su vehículo.'
+        );
+      } else {
+        throw new Error('No se pudo crear la solicitud');
+      }
+    } catch (error) {
+      console.error('Error requesting vehicle:', error.message);
+      Alert.alert('Error', 'No se pudo enviar la solicitud');
     } finally {
       setRequestLoading(null);
     }
@@ -122,9 +94,24 @@ export default function GarageScreen() {
     </View>
   );
 
+  // Función para agregar un nuevo vehículo
+  const handleAddVehicle = () => {
+    // Aquí podrías navegar a una pantalla para agregar un vehículo
+    // Por ahora, solo mostraremos un mensaje
+    Alert.alert('Próximamente', 'Funcionalidad en desarrollo');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.screenTitle}>Mis Vehículos</Text>
+      <View style={styles.header}>
+        <Text style={styles.screenTitle}>Mis Vehículos</Text>
+        <TouchableOpacity 
+          style={styles.addButton}
+          onPress={handleAddVehicle}
+        >
+          <Ionicons name="add" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
       
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -140,13 +127,10 @@ export default function GarageScreen() {
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No tienes vehículos registrados</Text>
               <TouchableOpacity 
-                style={styles.addButton}
-                onPress={() => {
-                  // Aquí iría la navegación a una pantalla para agregar vehículos
-                  Alert.alert('Próximamente', 'Funcionalidad en desarrollo');
-                }}
+                style={styles.emptyAddButton}
+                onPress={handleAddVehicle}
               >
-                <Text style={styles.addButtonText}>Agregar Vehículo</Text>
+                <Text style={styles.emptyAddButtonText}>Agregar Vehículo</Text>
               </TouchableOpacity>
             </View>
           }
@@ -161,11 +145,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
   screenTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    margin: 16,
     color: '#333',
+  },
+  addButton: {
+    backgroundColor: '#0066cc',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingContainer: {
     flex: 1,
@@ -243,13 +242,13 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 20,
   },
-  addButton: {
+  emptyAddButton: {
     backgroundColor: '#0066cc',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
   },
-  addButtonText: {
+  emptyAddButtonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
