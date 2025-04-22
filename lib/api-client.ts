@@ -46,7 +46,6 @@ const buildOptions = async (
   return options;
 };
 
-// Procesa la respuesta del servidor
 const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
   let data;
   try {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { profileService, Profile } from '../../services/profile-service';
+import { userService, Profile } from '../../services/user-service';
 import { authService } from '../../services/auth-service';
 
 export default function ProfileScreen() {
@@ -21,7 +21,7 @@ export default function ProfileScreen() {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const data = await profileService.getUserProfile();
+      const data = await userService.getUser();
       
       if (data) {
         setProfile(data);
@@ -41,7 +41,7 @@ export default function ProfileScreen() {
     try {
       setUpdating(true);
       
-      const updatedProfile = await profileService.updateProfile({
+      const updatedProfile = await userService.updateUser({
         full_name: fullName,
         apartment: apartment,
       });
