@@ -1,5 +1,6 @@
-import { apiClient } from '../lib/api-client';
+import { apiClient } from '../api-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { notificationService } from './notification-service';
 
 export type LoginCredentials = {
   Username: string;
@@ -8,15 +9,21 @@ export type LoginCredentials = {
 
 
 export const authService = {
-  async login(credentials: LoginCredentials): Promise<boolean> {
-    const response = await apiClient.post<{ token: string }>('/auth/login', credentials, false);
-    
-    if (response.data?.token) {
-      await AsyncStorage.setItem('authToken', response.data.token);
-      return true;
-    }
   
-    return false;
+  async login(credentials: LoginCredentials): Promise<boolean> {
+    try {
+      const response = await apiClient.post<{ token: string }>('/auth/login', credentials, false);
+      
+      if (response.data?.token) {
+        await AsyncStorage.setItem('authToken', response.data.token);
+        await notificationService.registerPushToken();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
   },
   
   async logout(): Promise<boolean> {

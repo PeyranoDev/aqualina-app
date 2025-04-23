@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { userService, Profile } from '../../services/user-service';
-import { authService } from '../../services/auth-service';
+import { userService, Profile } from '../../lib/services/user-service';
+import { authService } from '../../lib/services/auth-service';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);

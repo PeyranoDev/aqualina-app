@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { vehicleService, Vehicle, VehicleRequest } from '../../services/vehicle-service';
+import { vehicleService, Vehicle, VehicleRequest } from '../../lib/services/vehicle-service';
 
 export default function GarageScreen() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);

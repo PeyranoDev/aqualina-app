@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, FlatList, RefreshControl, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { newsService, News } from '../../services/news-service';
+import { newsService, News } from '../../lib/services/news-service';
 
 export default function NewsScreen() {
   const [news, setNews] = useState<News[]>([]);

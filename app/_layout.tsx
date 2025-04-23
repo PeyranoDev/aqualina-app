@@ -10,22 +10,17 @@ import {
 import { Slot, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { authService } from '../services/auth-service';
-
-const phrases = [
-  "Preparando tu espacio de bienestar...",
-  "Conectando con tu comunidad...",
-  "Organizando la comodidad del hogar...",
-  "Tu día comienza con Aqualina...",
-  "Optimizando tu experiencia residencial...",
-  "Trayendo calma a tu rutina...",
-];
+import { authService } from '../lib/services/auth-service';
+import { AuthProvider } from '@/lib/context/auth-context';
+import { useNotifications } from '@/lib/hooks/use-notifications';
 
 export default function RootLayout() {
   const [randomPhrase] = useState(() => {
     const index = Math.floor(Math.random() * phrases.length);
     return phrases[index];
   });
+
+  useNotifications();
 
   const paddingTop = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
 
@@ -79,17 +74,17 @@ export default function RootLayout() {
     };
 
     init();
+
   }, []);
 
   return (
+    <AuthProvider>
     <SafeAreaProvider>
       <View style={{ flex: 1, paddingTop, backgroundColor: '#c2e9fb' }}>
-        {/* Contenido principal */}
         <Animated.View style={{ flex: 1, opacity: fadeContent }}>
           <Slot />
         </Animated.View>
 
-        {/* Splash screen */}
         <Animated.View
           pointerEvents="none"
           style={[StyleSheet.absoluteFill, { opacity: fadeSplash, zIndex: 10 }]}
@@ -105,8 +100,18 @@ export default function RootLayout() {
         </Animated.View>
       </View>
     </SafeAreaProvider>
+    </AuthProvider>
   );
 }
+
+const phrases = [
+  "Preparando tu espacio de bienestar...",
+  "Conectando con tu comunidad...",
+  "Organizando la comodidad del hogar...",
+  "Tu día comienza con Aqualina...",
+  "Optimizando tu experiencia residencial...",
+  "Trayendo calma a tu rutina...",
+];
 
 const styles = StyleSheet.create({
   splashContainer: {

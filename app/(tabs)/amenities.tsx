@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { reservationService, Reservation, CreateReservationDto } from '../../services/reservation-service';
+import { reservationService, Reservation, CreateReservationDto } from '../../lib/services/reservation-service';
 
 // Horarios disponibles
 const weekdaySlots = ['19:00', '20:00', '21:00'];

@@ -2,26 +2,28 @@ import { useState } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { authService, LoginCredentials } from '../services/auth-service';
+import { authService, LoginCredentials } from '../lib/services/auth-service';
+import { useAuth } from '@/lib/context/auth-context';
 
 export default function LoginScreen() {
   const [credentials, setCredentials] = useState<LoginCredentials>({
-    email: '',
-    password: '',
+    Username: '',
+    Password: '',
   });
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
-
+  
   const handleLogin = async () => {
-    if (!credentials.email || !credentials.password) {
+    if (!credentials.Username || !credentials.Password) {
       Alert.alert('Error', 'Por favor ingrese email y contraseña');
       return;
     }
 
     setLoading(true);
     try {
-      const user = await authService.login(credentials);
+      const success = await login(credentials);
 
-      if (user) {
+      if (success) {
         router.replace('/');
       } else {
         Alert.alert('Error de inicio de sesión', 'Credenciales inválidas');
@@ -37,6 +39,7 @@ export default function LoginScreen() {
     }
   };
 
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.logoContainer}>
@@ -50,17 +53,17 @@ export default function LoginScreen() {
       <View style={styles.formContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Email"
-          value={credentials.email}
-          onChangeText={(text) => setCredentials({ ...credentials, email: text })}
+          placeholder="Nombre de Usuario"
+          value={credentials.Username}
+          onChangeText={(text) => setCredentials({ ...credentials, Username: text })}
           autoCapitalize="none"
-          keyboardType="email-address"
+          keyboardType="default"
         />
         <TextInput
           style={styles.input}
           placeholder="Contraseña"
-          value={credentials.password}
-          onChangeText={(text) => setCredentials({ ...credentials, password: text })}
+          value={credentials.Password}
+          onChangeText={(text) => setCredentials({ ...credentials, Password: text })}
           secureTextEntry
         />
         <TouchableOpacity 
