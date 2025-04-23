@@ -28,6 +28,16 @@ export const authService = {
       return false;
     }
   },
+
+  async changePassword(password: string): Promise<boolean> {
+    try {
+      const response = await apiClient.post('/auth/change-password', { password }, true);
+      if (response.status !== 200) return false;
+      return true;
+    } catch (error) {
+      return false;
+    }
+  },
   
   async isAuthenticated(): Promise<boolean> {
     try {
