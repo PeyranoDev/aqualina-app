@@ -14,13 +14,16 @@ import { authService } from '../lib/services/auth-service';
 import { AuthProvider } from '@/lib/context/auth-context';
 import { useNotifications } from '@/lib/hooks/use-notifications';
 
+function WrappedLayout() {
+  useNotifications(); 
+  return <Slot />;
+}
+
 export default function RootLayout() {
   const [randomPhrase] = useState(() => {
     const index = Math.floor(Math.random() * phrases.length);
     return phrases[index];
   });
-
-  useNotifications();
 
   const paddingTop = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
 
@@ -78,29 +81,26 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <AuthProvider>
     <SafeAreaProvider>
-      <View style={{ flex: 1, paddingTop, backgroundColor: '#c2e9fb' }}>
-        <Animated.View style={{ flex: 1, opacity: fadeContent }}>
-          <Slot />
-        </Animated.View>
+      <AuthProvider>
+        <View style={{ flex: 1, paddingTop, backgroundColor: '#c2e9fb' }}>
+          <Animated.View style={{ flex: 1, opacity: fadeContent }}>
+            <WrappedLayout />
+          </Animated.View>
 
-        <Animated.View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { opacity: fadeSplash, zIndex: 10 }]}
-        >
-          <LinearGradient
-            colors={['#a1c4fd', '#c2e9fb']}
-            style={styles.splashContainer}
+          <Animated.View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, { opacity: fadeSplash, zIndex: 10 }]}
           >
-            <Animated.Text style={[styles.title, { transform: [{ scale: scaleAnim }] }]}>
-              {randomPhrase}
-            </Animated.Text>
-          </LinearGradient>
-        </Animated.View>
-      </View>
+            <LinearGradient colors={['#a1c4fd', '#c2e9fb']} style={styles.splashContainer}>
+              <Animated.Text style={[styles.title, { transform: [{ scale: scaleAnim }] }]}>
+                {randomPhrase}
+              </Animated.Text>
+            </LinearGradient>
+          </Animated.View>
+        </View>
+      </AuthProvider>
     </SafeAreaProvider>
-    </AuthProvider>
   );
 }
 
