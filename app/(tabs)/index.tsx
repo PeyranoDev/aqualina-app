@@ -35,19 +35,19 @@ export default function NewsScreen() {
   // Renderizar cada noticia
   const renderNewsItem = ({ item }: { item: News }) => (
     <View style={styles.newsItem}>
-      {item.image_url && (
+      {item.Image_url && (
         <Image 
-          source={{ uri: item.image_url }} 
+          source={{ uri: item.Image_url }} 
           style={styles.newsImage} 
           resizeMode="cover"
         />
       )}
       <View style={styles.newsContent}>
-        <Text style={styles.newsTitle}>{item.title}</Text>
+        <Text style={styles.newsTitle}>{item.Title}</Text>
         <Text style={styles.newsDate}>
-          {new Date(item.created_at).toLocaleDateString()}
+          {new Date(item.Created_at).toLocaleDateString()}
         </Text>
-        <Text style={styles.newsText}>{item.content}</Text>
+        <Text style={styles.newsText}>{item.Content}</Text>
       </View>
     </View>
   );
@@ -64,7 +64,7 @@ export default function NewsScreen() {
         <FlatList
           data={news}
           renderItem={renderNewsItem}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item.Id}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }

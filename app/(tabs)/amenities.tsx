@@ -57,7 +57,7 @@ export default function AmenitiesScreen() {
   // Verificar si un horario ya está reservado
   const isTimeSlotReserved = (timeSlot: string) => {
     return existingReservations.some(reservation => 
-      reservation.start_time === timeSlot && reservation.status === 'confirmed'
+      reservation.Start_time === timeSlot && reservation.Status === 'confirmed'
     );
   };
 
