@@ -2,7 +2,7 @@ import { apiClient } from '../api-client';
 
 // Tipos
 export type Vehicle = {
-  id: string;
+  Id: string;
   plate: string;
   model: string;
   color: string;

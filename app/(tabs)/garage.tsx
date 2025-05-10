@@ -23,16 +23,15 @@ export default function GarageScreen() {
     }
   };
 
-  // Cargar vehículos al montar el componente
+  
   useEffect(() => {
     fetchVehicles();
   }, []);
 
-  // Función para solicitar un vehículo
-  const requestVehicle = async (vehicle: Vehicle) => {
-    setRequestLoading(vehicle.id);
+    const requestVehicle = async (vehicle: Vehicle) => {
+    setRequestLoading(vehicle.Id);
     try {
-      const request = await vehicleService.requestVehicle(vehicle.id);
+      const request = await vehicleService.requestVehicle(vehicle.Id);
       
       if (request) {
         Alert.alert(
@@ -79,9 +78,9 @@ export default function GarageScreen() {
               ]
             );
           }}
-          disabled={requestLoading === item.id}
+          disabled={requestLoading === item.Id}
         >
-          {requestLoading === item.id ? (
+          {requestLoading === item.Id ? (
             <ActivityIndicator color="white" size="small" />
           ) : (
             <>
@@ -121,7 +120,7 @@ export default function GarageScreen() {
         <FlatList
           data={vehicles}
           renderItem={renderVehicleItem}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item.Id}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
