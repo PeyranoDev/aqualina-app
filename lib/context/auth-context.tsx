@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authService, LoginCredentials } from '../services/auth-service';
 import { userService, User } from '../services/user-service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { notificationService } from '../services/notification-service';
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -37,27 +38,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (token) {
           await loadUser();
           setIsAuthenticated(true);
+          const pushToken = await notificationService.getPushToken();
+          if (pushToken) {
+            await notificationService.registerDevice(pushToken);
+          }
         }
-      } catch (error) {
+      } catch {
         setIsAuthenticated(false);
         setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
-
     checkAuth();
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
-      const success = await authService.login(credentials);
-      if (success) {
+      const token = await authService.login(credentials);
+      if (token) {
         setIsAuthenticated(true);
         await loadUser();
+
+        try {
+          const pushToken = await notificationService.getPushToken();
+          console.log(pushToken)
+          if (pushToken) {
+            await notificationService.registerDevice(pushToken);
+          }
+        } catch (error) {
+          console.error('Error registrando push token:', error);
+        }
+        return true;
       }
-      return success;
+      return false;
     } catch (error) {
       console.error('Login error:', error);
       return false;
@@ -65,11 +80,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(false);
     }
   };
-  
+
   const logout = async () => {
     setIsLoading(true);
     try {
       await authService.logout();
+      await notificationService.unregisterDevice();
+      await AsyncStorage.removeItem('authToken');
       setIsAuthenticated(false);
       setUser(null);
     } catch (error) {
@@ -84,15 +101,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      isLoading, 
-      user, 
-      login, 
-      logout,
-      refreshUser,
-      setIsLoading
-    }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, isLoading, user, login, logout, refreshUser, setIsLoading }}>
       {children}
     </AuthContext.Provider>
   );
@@ -100,8 +110,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

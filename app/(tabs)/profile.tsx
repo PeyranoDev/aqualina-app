@@ -3,7 +3,8 @@ import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityInd
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { userService, Profile } from '../../lib/services/user-service';
-import { authService } from '../../lib/services/auth-service';
+import { useAuth } from '@/lib/context/auth-context';
+import { router } from 'expo-router';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -12,42 +13,43 @@ export default function ProfileScreen() {
   const [fullName, setFullName] = useState('');
   const [apartment, setApartment] = useState('');
 
-  // Cargar perfil al montar el componente
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  const { user, refreshUser, logout } = useAuth();
 
-  // Función para cargar el perfil
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const data = await userService.getUser();
-      
-      if (data) {
-        setProfile(data);
-        setFullName(data.full_name || '');
-        setApartment(data.apartment || '');
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching profile:', error.message);
-      Alert.alert('Error', 'No se pudo cargar el perfil');
-    } finally {
-      setLoading(false);
-    }
-  };
+  
+      try {
+        const userProfile = await userService.getUser();
+        setProfile(userProfile);
+        setFullName(`${userProfile.Name} ${userProfile.Surname}`);
+        setApartment(userProfile.Apartment);
+      } catch (error) {
+        console.error('Error fetching user profile:', error.message);
+        Alert.alert('Error', 'No se pudo cargar el perfil');
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    loadProfile();
+  }, [user]);
 
   // Función para actualizar el perfil
   const updateProfile = async () => {
     try {
       setUpdating(true);
-      
-      const updatedProfile = await userService.updateUser({
-        full_name: fullName,
-        apartment: apartment,
+      const slicedName = fullName.split(" ")
+      const updated = await userService.updateUser({
+        Name: slicedName[0],
+        Surname: slicedName[1],
+        Apartment: apartment,
       });
-
-      if (updatedProfile) {
-        setProfile(updatedProfile);
+      if (updated) {
+        await refreshUser();
         Alert.alert('Perfil actualizado', 'Tu perfil ha sido actualizado exitosamente');
       }
     } catch (error) {
@@ -57,16 +59,13 @@ export default function ProfileScreen() {
       setUpdating(false);
     }
   };
+  
 
   // Función para cerrar sesión
   const handleLogout = async () => {
     try {
-      const success = await authService.logout();
-      if (success) {
-        // La redirección se manejará en el layout principal
-      } else {
-        Alert.alert('Error', 'No se pudo cerrar sesión');
-      }
+      await logout();
+      router.replace('/login');
     } catch (error) {
       console.error('Error signing out:', error.message);
       Alert.alert('Error', 'No se pudo cerrar sesión');

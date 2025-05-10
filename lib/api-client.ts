@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '@env';
+import Constants from 'expo-constants';
 
 export type ApiResponse<T> = {
   data?: T;
@@ -12,6 +12,8 @@ export type PushTokenRequest = {
   deviceId?: string;
   platform: 'ios' | 'android';
 };
+
+const BACKEND_URI = Constants.expoConfig?.extra?.backendUri;
 
 const getAuthToken = async (): Promise<string | null> => {
   try {
@@ -57,7 +59,7 @@ export const apiClient = {
   async get<T>(endpoint: string, authenticated: boolean = true): Promise<ApiResponse<T>> {
     try {
       const options = await buildOptions('GET', undefined, authenticated);
-      const response = await fetch(`${API_URL}${endpoint}`, options);
+      const response = await fetch(`${BACKEND_URI}${endpoint}`, options);
       return handleResponse<T>(response);
     } catch (error) {
       return { error: 'Network error', status: 500 };
@@ -67,7 +69,7 @@ export const apiClient = {
   async post<T>(endpoint: string, body: any, authenticated: boolean = true): Promise<ApiResponse<T>> {
     try {
       const options = await buildOptions('POST', body, authenticated);
-      const response = await fetch(`${API_URL}${endpoint}`, options);
+      const response = await fetch(`${BACKEND_URI}${endpoint}`, options);
       return handleResponse<T>(response);
     } catch (error) {
       return { error: 'Network error', status: 500 };
@@ -77,7 +79,7 @@ export const apiClient = {
   async put<T>(endpoint: string, body: any, authenticated: boolean = true): Promise<ApiResponse<T>> {
     try {
       const options = await buildOptions('PUT', body, authenticated);
-      const response = await fetch(`${API_URL}${endpoint}`, options);
+      const response = await fetch(`${BACKEND_URI}${endpoint}`, options);
       return handleResponse<T>(response);
     } catch (error) {
       return { error: 'Network error', status: 500 };
@@ -87,7 +89,7 @@ export const apiClient = {
   async delete<T>(endpoint: string, authenticated: boolean = true): Promise<ApiResponse<T>> {
     try {
       const options = await buildOptions('DELETE', undefined, authenticated);
-      const response = await fetch(`${API_URL}${endpoint}`, options);
+      const response = await fetch(`${BACKEND_URI}${endpoint}`, options);
       return handleResponse<T>(response);
     } catch (error) {
       return { error: 'Network error', status: 500 };

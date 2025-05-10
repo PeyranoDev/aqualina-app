@@ -20,6 +20,7 @@ function WrappedLayout() {
 }
 
 export default function RootLayout() {
+  useNotifications();
   const [randomPhrase] = useState(() => {
     const index = Math.floor(Math.random() * phrases.length);
     return phrases[index];

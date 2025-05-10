@@ -12,11 +12,10 @@ export const authService = {
   
   async login(credentials: LoginCredentials): Promise<boolean> {
     try {
-      const response = await apiClient.post<{ token: string }>('/auth/login', credentials, false);
+      const response = await apiClient.post<{ accessToken: string }>('/auth/login', credentials, false);
       
-      if (response.data?.token) {
-        await AsyncStorage.setItem('authToken', response.data.token);
-        await notificationService.registerPushToken();
+      if (response.status.toString() == "200") {
+        await AsyncStorage.setItem('authToken', response.data.accessToken);
         return true;
       }
       return false;

@@ -17,9 +17,7 @@ export type VehicleRequest = {
   completed_at?: string;
 };
 
-// Servicio de vehículos
 export const vehicleService = {
-  // Obtener todos los vehículos del usuario
   async getUserVehicles(): Promise<Vehicle[]> {
     const response = await apiClient.get<Vehicle[]>('/vehicles');
     return response.data || [];

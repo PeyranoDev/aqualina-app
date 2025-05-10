@@ -1,55 +1,47 @@
-// lib/services/notification-service.ts
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { apiClient } from '@/lib/api-client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const notificationService = {
-  async registerPushToken(): Promise<string | null> {
-    try {
-      const { status } = await Notifications.requestPermissionsAsync();
-      
-      if (status !== 'granted') {
-        console.warn('Permisos de notificación no concedidos');
-        return null;
-      }
+  async getPushToken(): Promise<string | null> {
+    let { status } = await Notifications.getPermissionsAsync();
 
-      const token = (await Notifications.getExpoPushTokenAsync()).data;
-      
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'default',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FF231F7C',
-        });
-      }
+  if (status !== 'granted') {
+    const { status: newStatus } = await Notifications.requestPermissionsAsync();
+    status = newStatus;
+  }
 
-      await apiClient.post('/notifications/register-token', {
-        token,
-        platform: Platform.OS,
-        deviceId: Device.modelName
+  if (status !== 'granted') return null;
+
+  const token = (await Notifications.getDevicePushTokenAsync()).data;
+
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
       });
-
-      return token;
-    } catch (error) {
-      console.error('Error al registrar token push:', error);
-      return null;
     }
+    console.log(token)
+    return token;
   },
 
-  async scheduleNotification(title: string, body: string, seconds: number): Promise<string> {
-    return await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        sound: 'default',
-      },
-      trigger: { 
-        seconds,
-        type: 'timeInterval' 
-      },
-    });
+  async registerDevice(token: string): Promise<void> {
+    try {
+      await apiClient.post('/notification/register', {
+        Token: token,
+        Platform: Platform.OS,
+        DeviceModel: Device.modelName
+      });
+      
+      await AsyncStorage.setItem('pushToken', token);
+    } catch (error) {
+      console.error('Error registrando dispositivo:', error);
+      throw error;
+    }
   },
 
   async checkPermissions(): Promise<boolean> {
@@ -57,18 +49,15 @@ export const notificationService = {
     return status === 'granted';
   },
 
-  // Opcional: Método para notificaciones con fecha específica
-  async scheduleNotificationAtDate(title: string, body: string, date: Date): Promise<string> {
-    return await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        sound: 'default',
-      },
-      trigger: {
-        type: 'date', // Tipo diferente para fecha específica
-        date: date.getTime(),
-      },
-    });
+  async unregisterDevice(): Promise<void> {
+    const token = await AsyncStorage.getItem('pushToken');
+    if (!token) return;
+    
+    try {
+      await apiClient.post('/notification/unregister', { Token: token });
+      await AsyncStorage.removeItem('pushToken');
+    } catch (error) {
+      console.error('Error al desregistrar dispositivo:', error);
+    }
   }
 };

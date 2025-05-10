@@ -8,6 +8,7 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+credentials.json
 
 # Native
 *.orig.*
@@ -37,3 +38,5 @@ yarn-error.*
 
 app-example
 .env
+android
+ios
