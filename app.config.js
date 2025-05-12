@@ -19,7 +19,8 @@ export default {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#ffffff"
       },
-      package: "com.aoristotech.aqualinaapp"
+      package: "com.aoristotech.aqualinaapp",
+      googleServicesFile: "./android/app/google-services.json"
     },
     web: {
       bundler: "metro",
@@ -37,7 +38,8 @@ export default {
           backgroundColor: "#ffffff"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-notifications"
     ],
     extra: {
       router: {},

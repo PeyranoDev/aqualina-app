@@ -1,20 +1,20 @@
 import { apiClient } from '../api-client';
 
 export type UserProfile = {
-  Name: string;
-  Surname: string;
-  Apartment: string;
-  Email: string;
-  Role: string;
-  Phone: string;
+  name: string;
+  surname: string;
+  apartment: string;
+  email: string;
+  role: string;
+  phone: string;
 };
 
 export type User = {
-  Name: string;
-  Surname: string;
-  Apartment: string;
-  Email: string;
-  Phone: string;
+  name: string;
+  surname: string;
+  apartment: string;
+  email: string;
+  phone: string;
 };
 
 export const userService = {

@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { userService, Profile } from '../../lib/services/user-service';
+import { userService, UserProfile } from '../../lib/services/user-service';
 import { useAuth } from '@/lib/context/auth-context';
 import { router } from 'expo-router';
 
 export default function ProfileScreen() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -24,9 +24,10 @@ export default function ProfileScreen() {
   
       try {
         const userProfile = await userService.getUser();
+        console.log('userProfile:', userProfile);
         setProfile(userProfile);
-        setFullName(`${userProfile.Name} ${userProfile.Surname}`);
-        setApartment(userProfile.Apartment);
+        setFullName(`${userProfile.name} ${userProfile.surname}`);
+        setApartment(userProfile.apartment);
       } catch (error) {
         console.error('Error fetching user profile:', error.message);
         Alert.alert('Error', 'No se pudo cargar el perfil');
@@ -44,9 +45,9 @@ export default function ProfileScreen() {
       setUpdating(true);
       const slicedName = fullName.split(" ")
       const updated = await userService.updateUser({
-        Name: slicedName[0],
-        Surname: slicedName[1],
-        Apartment: apartment,
+        name: slicedName[0],
+        surname: slicedName[1],
+        apartment: apartment,
       });
       if (updated) {
         await refreshUser();
