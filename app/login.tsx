@@ -1,62 +1,69 @@
 import { useState } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../lib/supabase';
+import { router } from 'expo-router';
+import { authService, LoginCredentials } from '../lib/services/auth-service';
+import { useAuth } from '@/lib/context/auth-context';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [credentials, setCredentials] = useState<LoginCredentials>({
+    Username: '',
+    Password: '',
+  });
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
-
+  
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!credentials.Username || !credentials.Password) {
       Alert.alert('Error', 'Por favor ingrese email y contraseña');
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const success = await login(credentials);
 
-      if (error) throw error;
-      
-      // Si el login es exitoso, el listener en _layout.tsx redirigirá automáticamente
+      if (success) {
+        router.replace('/');
+      } else {
+        Alert.alert('Error de inicio de sesión', 'Credenciales inválidas');
+      }
     } catch (error) {
-        if (error instanceof Error) {
+      if (error instanceof Error) {
         Alert.alert('Error de inicio de sesión', error.message);
-        }
+      } else {
+        Alert.alert('Error de inicio de sesión', 'Error desconocido');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.logoContainer}>
         <Image 
-          source={{ uri: 'https://via.placeholder.com/150?text=Aqualina' }} 
+          source={{ uri: 'https://i.imgur.com/He6OT86.png' }} 
           style={styles.logo} 
         />
         <Text style={styles.title}>Torre Aqualina</Text>
       </View>
-      
+
       <View style={styles.formContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
+          placeholder="Nombre de Usuario"
+          value={credentials.Username}
+          onChangeText={(text) => setCredentials({ ...credentials, Username: text })}
           autoCapitalize="none"
-          keyboardType="email-address"
+          keyboardType="default"
         />
         <TextInput
           style={styles.input}
           placeholder="Contraseña"
-          value={password}
-          onChangeText={setPassword}
+          value={credentials.Password}
+          onChangeText={(text) => setCredentials({ ...credentials, Password: text })}
           secureTextEntry
         />
         <TouchableOpacity 

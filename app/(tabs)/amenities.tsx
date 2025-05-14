@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../../lib/supabase';
+import { reservationService, Reservation, CreateReservationDto } from '../../lib/services/reservation-service';
 
 // Horarios disponibles
 const weekdaySlots = ['19:00', '20:00', '21:00'];
@@ -9,15 +9,6 @@ const sundaySlots = ['12:00', '13:00', '14:00'];
 
 // Duración de cada reserva en horas
 const RESERVATION_DURATION = 1;
-
-// Tipo para las reservas
-type Reservation = {
-  id: string;
-  reservation_date: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-};
 
 // Obtener fechas para los próximos 14 días
 const getDates = () => {
@@ -53,19 +44,11 @@ export default function AmenitiesScreen() {
     setLoading(true);
     try {
       const formattedDate = date.toISOString().split('T')[0];
-      
-      const { data, error } = await supabase
-        .from('amenity_reservations')
-        .select('*')
-        .eq('reservation_date', formattedDate)
-        .eq('amenity', 'sum')
-        .eq('status', 'confirmed');
-
-      if (error) throw error;
-      
-      setExistingReservations(data || []);
-    } catch (error : any) {
-        console.error('Error fetching reservations:', error.message);
+      const reservations = await reservationService.getReservationsByDate(formattedDate);
+      setExistingReservations(reservations);
+    } catch (error) {
+      console.error('Error fetching reservations:', error.message);
+      Alert.alert('Error', 'No se pudieron cargar las reservas');
     } finally {
       setLoading(false);
     }
@@ -74,7 +57,7 @@ export default function AmenitiesScreen() {
   // Verificar si un horario ya está reservado
   const isTimeSlotReserved = (timeSlot: string) => {
     return existingReservations.some(reservation => 
-      reservation.start_time === timeSlot
+      reservation.Start_time === timeSlot && reservation.Status === 'confirmed'
     );
   };
 
@@ -84,11 +67,6 @@ export default function AmenitiesScreen() {
     
     setReserving(true);
     try {
-      // Obtener el ID del usuario actual
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) throw new Error('Usuario no autenticado');
-
       // Calcular la hora de fin (1 hora después de la hora de inicio)
       const startTime = selectedTime;
       const [startHour, startMinute] = startTime.split(':').map(Number);
@@ -99,30 +77,30 @@ export default function AmenitiesScreen() {
       const formattedDate = selectedDate.toISOString().split('T')[0];
 
       // Crear la reserva
-      const { error } = await supabase
-        .from('amenity_reservations')
-        .insert({
-          user_id: user.id,
-          amenity: 'sum',
-          reservation_date: formattedDate,
-          start_time: startTime,
-          end_time: endTime,
-          status: 'confirmed'
-        });
+      const reservationData: CreateReservationDto = {
+        amenity: 'sum',
+        reservation_date: formattedDate,
+        start_time: startTime,
+        end_time: endTime,
+      };
 
-      if (error) throw error;
+      const reservation = await reservationService.createReservation(reservationData);
 
-      Alert.alert(
-        'Reserva Confirmada', 
-        `Su reserva para el ${selectedDate.toLocaleDateString()} a las ${selectedTime} ha sido confirmada.`
-      );
-      
-      // Resetear selecciones y recargar reservas
-      setSelectedTime(null);
-      fetchReservations(selectedDate);
-    } catch (error : any) {
-        console.error('Error creating reservation:', error.message);
-        Alert.alert('Error', 'No se pudo crear la reserva');
+      if (reservation) {
+        Alert.alert(
+          'Reserva Confirmada', 
+          `Su reserva para el ${selectedDate.toLocaleDateString()} a las ${selectedTime} ha sido confirmada.`
+        );
+        
+        // Resetear selecciones y recargar reservas
+        setSelectedTime(null);
+        fetchReservations(selectedDate);
+      } else {
+        throw new Error('No se pudo crear la reserva');
+      }
+    } catch (error) {
+      console.error('Error creating reservation:', error.message);
+      Alert.alert('Error', 'No se pudo crear la reserva');
     } finally {
       setReserving(false);
     }

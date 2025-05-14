@@ -1,37 +1,19 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, FlatList, RefreshControl, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../../lib/supabase';
-
-// Tipo para las noticias
-type News = {
-  id: string;
-  title: string;
-  content: string;
-  image_url: string | null;
-  created_at: string;
-};
+import { newsService, News } from '../../lib/services/news-service';
 
 export default function NewsScreen() {
   const [news, setNews] = useState<News[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Función para cargar noticias
   const fetchNews = async () => {
     try {
-      const { data, error } = await supabase
-        .from('news')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        setNews(data);
-      }
-    } catch (error : any) {
+      const data = await newsService.getAllNews();
+      setNews(data);
+    } catch (error) {
       console.error('Error fetching news:', error.message);
     } finally {
       setLoading(false);
@@ -53,19 +35,19 @@ export default function NewsScreen() {
   // Renderizar cada noticia
   const renderNewsItem = ({ item }: { item: News }) => (
     <View style={styles.newsItem}>
-      {item.image_url && (
+      {item.Image_url && (
         <Image 
-          source={{ uri: item.image_url }} 
+          source={{ uri: item.Image_url }} 
           style={styles.newsImage} 
           resizeMode="cover"
         />
       )}
       <View style={styles.newsContent}>
-        <Text style={styles.newsTitle}>{item.title}</Text>
+        <Text style={styles.newsTitle}>{item.Title}</Text>
         <Text style={styles.newsDate}>
-          {new Date(item.created_at).toLocaleDateString()}
+          {new Date(item.Created_at).toLocaleDateString()}
         </Text>
-        <Text style={styles.newsText}>{item.content}</Text>
+        <Text style={styles.newsText}>{item.Content}</Text>
       </View>
     </View>
   );
@@ -82,7 +64,7 @@ export default function NewsScreen() {
         <FlatList
           data={news}
           renderItem={renderNewsItem}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item.Id}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }

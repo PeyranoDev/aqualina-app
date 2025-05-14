@@ -1,10 +1,13 @@
 import { Tabs } from 'expo-router/tabs';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type TabBarIconProps = {
   color: string;
   size: number;
 };
+
+
 
 export default function TabsLayout() {
   return (

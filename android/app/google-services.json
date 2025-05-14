@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "587234835249",
+    "project_id": "aoristoaqualina-cebdc",
+    "storage_bucket": "aoristoaqualina-cebdc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:587234835249:android:9dbe1a1c8560584e0d4e10",
+        "android_client_info": {
+          "package_name": "com.aoristotech.aqualinaapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyrlCqOhrNLZMbZTcl5-dDL68iX5XtzxE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
