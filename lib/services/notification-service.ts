@@ -1,63 +1,44 @@
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import { Platform } from 'react-native';
-import { apiClient } from '@/lib/api-client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiClient } from "../api-client";
 
-export const notificationService = {
-  async getPushToken(): Promise<string | null> {
-    let { status } = await Notifications.getPermissionsAsync();
 
-  if (status !== 'granted') {
-    const { status: newStatus } = await Notifications.requestPermissionsAsync();
-    status = newStatus;
-  }
+/**
+ * DTO que coincide con el esperado por la Azure Function 'RegisterPushToken'.
+ * Asegúrate de que las propiedades coincidan con el `NotificationTokenCreateDTO` de tu backend.
+ */
+interface RegisterTokenPayload {
+  token: string;
+  // Añade aquí cualquier otra propiedad que tu DTO espere, por ejemplo:
+  // platform: 'ios' | 'android';
+}
 
-  if (status !== 'granted') return null;
-
-  const token = (await Notifications.getDevicePushTokenAsync()).data;
-
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF231F7C',
-      });
-    }
-    console.log(token)
-    return token;
-  },
-
-  async registerDevice(token: string): Promise<void> {
+/**
+ * Servicio para gestionar las interacciones con el API de notificaciones.
+ */
+class NotificationService {
+  /**
+   * Registra el token de notificación del dispositivo en el backend.
+   * @param token El token nativo del dispositivo (FCM/APNS).
+   * @returns Una promesa que se resuelve si el registro es exitoso.
+   */
+  async registerToken(token: string): Promise<void> {
     try {
-      await apiClient.post('/notification/register', {
-        Token: token,
-        Platform: Platform.OS,
-        DeviceModel: Device.modelName
-      });
+      console.log(`Enviando token al backend: ${token}`);
       
-      await AsyncStorage.setItem('pushToken', token);
+      const payload: RegisterTokenPayload = {
+        token: token,
+        // platform: Platform.OS // Podrías enviar la plataforma si tu backend lo necesita
+      };
+      
+      // La ruta debe coincidir exactamente con la de tu Azure Function.
+      await apiClient.post('/Notification/RegisterPushToken', payload);
+      
+      console.log('Token registrado en el backend exitosamente.');
     } catch (error) {
-      console.error('Error registrando dispositivo:', error);
-      throw error;
-    }
-  },
-
-  async checkPermissions(): Promise<boolean> {
-    const { status } = await Notifications.getPermissionsAsync();
-    return status === 'granted';
-  },
-
-  async unregisterDevice(): Promise<void> {
-    const token = await AsyncStorage.getItem('pushToken');
-    if (!token) return;
-    
-    try {
-      await apiClient.post('/notification/unregister', { Token: token });
-      await AsyncStorage.removeItem('pushToken');
-    } catch (error) {
-      console.error('Error al desregistrar dispositivo:', error);
+      console.error('Error al registrar el token de notificación en el backend:', error);
+      // Opcional: Podrías lanzar el error para manejarlo en el AuthContext.
+      // throw error;
     }
   }
-};
+}
+
+export default new NotificationService();

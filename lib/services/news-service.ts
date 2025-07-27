@@ -20,8 +20,6 @@ export const newsService = {
     return response.data || [];
   },
   
-  
-
   async getNewsById(id: string): Promise<News | null> {
     const response = await apiClient.get<News>(`/news/${id}`);
     return response.data || null;

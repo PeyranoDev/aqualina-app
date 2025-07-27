@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, FlatList, RefreshControl, Image, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, FlatList, RefreshControl, Image, ActivityIndicator, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { newsService, News } from '../../lib/services/news-service';
 
@@ -21,18 +21,15 @@ export default function NewsScreen() {
     }
   };
 
-  // Cargar noticias al montar el componente
   useEffect(() => {
     fetchNews();
   }, []);
 
-  // Función para refrescar noticias
   const onRefresh = () => {
     setRefreshing(true);
     fetchNews();
   };
 
-  // Renderizar cada noticia
   const renderNewsItem = ({ item }: { item: News }) => (
     <View style={styles.newsItem}>
       {item.Image_url && (
@@ -53,7 +50,7 @@ export default function NewsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.screenTitle}>Noticias</Text>
       
       {loading ? (
@@ -74,7 +71,7 @@ export default function NewsScreen() {
           }
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

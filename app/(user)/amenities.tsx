@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView, ActivityIndicator, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { reservationService, Reservation, CreateReservationDto } from '../../lib/services/reservation-service';
 import { reservationService, Reservation, CreateReservationDto } from '../../lib/services/reservation-service';
 
 // Horarios disponibles
@@ -39,11 +40,15 @@ export default function AmenitiesScreen() {
     }
   }, [selectedDate]);
 
-  // Función para cargar reservas existentes
   const fetchReservations = async (date: Date) => {
     setLoading(true);
     try {
       const formattedDate = date.toISOString().split('T')[0];
+      const reservations = await reservationService.getReservationsByDate(formattedDate);
+      setExistingReservations(reservations);
+    } catch (error) {
+      console.error('Error fetching reservations:', error.message);
+      Alert.alert('Error', 'No se pudieron cargar las reservas');
       const reservations = await reservationService.getReservationsByDate(formattedDate);
       setExistingReservations(reservations);
     } catch (error) {
@@ -58,30 +63,29 @@ export default function AmenitiesScreen() {
   const isTimeSlotReserved = (timeSlot: string) => {
     return existingReservations.some(reservation => 
       reservation.Start_time === timeSlot && reservation.Status === 'confirmed'
+      reservation.Start_time === timeSlot && reservation.Status === 'confirmed'
     );
   };
 
-  // Función para crear una nueva reserva
+
   const createReservation = async () => {
     if (!selectedDate || !selectedTime) return;
     
     setReserving(true);
     try {
-      // Calcular la hora de fin (1 hora después de la hora de inicio)
+  
       const startTime = selectedTime;
       const [startHour, startMinute] = startTime.split(':').map(Number);
       const endHour = startHour + RESERVATION_DURATION;
       const endTime = `${endHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
       
-      // Formatear la fecha para la base de datos (YYYY-MM-DD)
       const formattedDate = selectedDate.toISOString().split('T')[0];
 
-      // Crear la reserva
       const reservationData: CreateReservationDto = {
-        amenity: 'sum',
-        reservation_date: formattedDate,
-        start_time: startTime,
-        end_time: endTime,
+        Amenity: 'sum',
+        Reservation_date: formattedDate,
+        Start_time: startTime,
+        End_time: endTime,
       };
 
       const reservation = await reservationService.createReservation(reservationData);
@@ -133,11 +137,11 @@ export default function AmenitiesScreen() {
 
   const isWeekday = (date: Date) => {
     const day = date.getDay();
-    return day >= 1 && day <= 5; // Monday to Friday
+    return day >= 1 && day <= 5; 
   };
 
   const isSunday = (date: Date) => {
-    return date.getDay() === 0; // Sunday
+    return date.getDay() === 0; 
   };
 
   const getAvailableSlots = (date: Date) => {
@@ -147,9 +151,9 @@ export default function AmenitiesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <>
+    <View style={styles.container}>
       <Text style={styles.screenTitle}>Reserva del SUM</Text>
-      
       <Text style={styles.sectionTitle}>Seleccione una fecha:</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.datesContainer}>
         {dates.map((date, index) => {
@@ -243,7 +247,8 @@ export default function AmenitiesScreen() {
           <Text style={styles.reserveButtonText}>Confirmar Reserva</Text>
         )}
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
+    </>
   );
 }
 

@@ -1,39 +1,49 @@
-import { useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  Platform,
-  StatusBar,
-} from 'react-native';
+import { useEffect, useRef, useMemo } from 'react';
+import { View, StyleSheet, Animated, Platform, StatusBar } from 'react-native';
 import { Slot, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { authService } from '../lib/services/auth-service';
-import { AuthProvider } from '@/lib/context/auth-context';
+import { AuthProvider, useAuth } from '@/lib/context/auth-context';
 import { useNotifications } from '@/lib/hooks/use-notifications';
 
-function WrappedLayout() {
-  useNotifications(); 
+function AppNavigator() {
+  const { userRole, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (!userRole) {
+      router.replace('/login');
+    } else {
+      const initialRoute = {
+        admin: '/(admin)',
+        security: '/(security)',
+        user: '/(user)',
+      }[userRole] || '/(user)';
+
+      router.replace(initialRoute);
+    }
+  }, [userRole, isLoading]);
+
   return <Slot />;
 }
 
 export default function RootLayout() {
   useNotifications();
-  const [randomPhrase] = useState(() => {
-    const index = Math.floor(Math.random() * phrases.length);
-    return phrases[index];
-  });
 
   const paddingTop = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
-
-  const [fadeSplash] = useState(new Animated.Value(1));
-  const [fadeContent] = useState(new Animated.Value(0));
+  const fadeSplash = useRef(new Animated.Value(1)).current;
+  const fadeContent = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  const randomPhrase = useMemo(() => {
+    const index = Math.floor(Math.random() * phrases.length);
+    return phrases[index];
+  }, []);
 
   useEffect(() => {
-    Animated.loop(
+    const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(scaleAnim, {
           toValue: 1.08,
@@ -46,55 +56,57 @@ export default function RootLayout() {
           useNativeDriver: true,
         }),
       ])
-    ).start();
+    );
 
-    const init = async () => {
-      try {
-        const isAuth = await authService.isAuthenticated();
+    animationRef.current = animation;
+    animation.start();
 
-        setTimeout(() => {
-          Animated.timing(fadeSplash, {
-            toValue: 0,
-            duration: 600,
-            useNativeDriver: true,
-          }).start();
-
-          Animated.timing(fadeContent, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: true,
-          }).start();
-
-          if (isAuth) {
-            router.replace('/(tabs)');
-          } else {
-            router.replace('/login');
-          }
-        }, 3000);
-      } catch (error) {
-        console.error('Error al verificar sesión:', error);
-        router.replace('/login');
+    return () => {
+      if (animationRef.current) {
+        animationRef.current.stop();
       }
     };
+  }, []);
 
-    init();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(fadeSplash, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeContent, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 3000);
 
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <SafeAreaProvider>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <AuthProvider>
-        <View style={{ flex: 1, paddingTop, backgroundColor: '#c2e9fb' }}>
+        <View style={[styles.container, { paddingTop }]}>
           <Animated.View style={{ flex: 1, opacity: fadeContent }}>
-            <WrappedLayout />
+            <AppNavigator />
           </Animated.View>
 
           <Animated.View
             pointerEvents="none"
             style={[StyleSheet.absoluteFill, { opacity: fadeSplash, zIndex: 10 }]}
           >
-            <LinearGradient colors={['#a1c4fd', '#c2e9fb']} style={styles.splashContainer}>
-              <Animated.Text style={[styles.title, { transform: [{ scale: scaleAnim }] }]}>
+            <LinearGradient
+              colors={['#a1c4fd', '#c2e9fb']}
+              style={[styles.splashContainer, { paddingTop }]}
+            >
+              <Animated.Text
+                style={[styles.title, { transform: [{ scale: scaleAnim }] }]}
+              >
                 {randomPhrase}
               </Animated.Text>
             </LinearGradient>
@@ -115,11 +127,14 @@ const phrases = [
 ];
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
   splashContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 30,
   },
   title: {
     fontSize: 22,

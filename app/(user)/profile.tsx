@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { userService, UserProfile } from '../../lib/services/user-service';
+import { userService } from '../../lib/services/user-service';
 import { useAuth } from '@/lib/context/auth-context';
 import { router } from 'expo-router';
+import { User } from '@/lib/interfaces/user';
 
 export default function ProfileScreen() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [fullName, setFullName] = useState('');
+  const [name, setName] = useState('');
+  const [surname, setSurname] = useState('');
   const [apartment, setApartment] = useState('');
 
   const { user, refreshUser, logout } = useAuth();
@@ -26,7 +28,8 @@ export default function ProfileScreen() {
         const userProfile = await userService.getUser();
         console.log('userProfile:', userProfile);
         setProfile(userProfile);
-        setFullName(`${userProfile.name} ${userProfile.surname}`);
+        setName(userProfile.name);
+        setSurname(userProfile.surname);
         setApartment(userProfile.apartment);
       } catch (error) {
         console.error('Error fetching user profile:', error.message);
@@ -39,18 +42,16 @@ export default function ProfileScreen() {
     loadProfile();
   }, [user]);
 
-  // Función para actualizar el perfil
   const updateProfile = async () => {
     try {
       setUpdating(true);
-      const slicedName = fullName.split(" ")
       const updated = await userService.updateUser({
-        name: slicedName[0],
-        surname: slicedName[1],
-        apartment: apartment,
+        name: name,
+        surname: surname,
       });
       if (updated) {
         await refreshUser();
+        console.log("ola")
         Alert.alert('Perfil actualizado', 'Tu perfil ha sido actualizado exitosamente');
       }
     } catch (error) {
@@ -62,7 +63,6 @@ export default function ProfileScreen() {
   };
   
 
-  // Función para cerrar sesión
   const handleLogout = async () => {
     try {
       await logout();
@@ -82,7 +82,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Text style={styles.screenTitle}>Mi Perfil</Text>
         
@@ -94,21 +94,30 @@ export default function ProfileScreen() {
             editable={false}
           />
           
-          <Text style={styles.label}>Nombre completo</Text>
+          <Text style={styles.label}>Nombre</Text>
+          <Text style={styles.label}>Nombre</Text>
           <TextInput
             style={styles.input}
-            value={fullName}
-            onChangeText={setFullName}
+            value={name}
+            onChangeText={setName}
+            value={name}
+            onChangeText={setName}
+            placeholder="Ingrese su nombre completo"
+          />
+
+          <Text style={styles.label}>Apellido</Text>
+
+          <Text style={styles.label}>Apellido</Text>
+          <TextInput
+            style={styles.input}
+            value={surname}
+            onChangeText={setSurname}
+            placeholder="Ingrese su nombre completo"
+            value={surname}
+            onChangeText={setSurname}
             placeholder="Ingrese su nombre completo"
           />
           
-          <Text style={styles.label}>Apartamento</Text>
-          <TextInput
-            style={styles.input}
-            value={apartment}
-            onChangeText={setApartment}
-            placeholder="Ej: 10A"
-          />
           
           <TouchableOpacity 
             style={styles.updateButton} 
@@ -140,7 +149,7 @@ export default function ProfileScreen() {
           <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

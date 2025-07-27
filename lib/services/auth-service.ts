@@ -1,57 +1,44 @@
 import { apiClient } from '../api-client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { notificationService } from './notification-service';
+import { AuthResponse, Credentials } from '../interfaces/auth';
 
-export type LoginCredentials = {
-  Username: string;
-  Password: string;
-};
-
-
-export const authService = {
-  
-  async login(credentials: LoginCredentials): Promise<boolean> {
+/**
+ * Servicio para gestionar las interacciones de autenticación con la API.
+ * Su única responsabilidad es comunicarse con el backend.
+ */
+class AuthService {
+  /**
+   * Realiza la petición de login al backend.
+   * @param credentials Las credenciales del usuario, incluyendo el ID de la torre seleccionada.
+   * @returns Una promesa que se resuelve con el objeto AuthResponse.
+   */
+  async login(credentials: Credentials): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post<{ accessToken: string }>('/auth/login', credentials, false);
+      const response = await apiClient.post<AuthResponse>('/auth/login', credentials, false);
       
-      if (response.status.toString() == "200") {
-        await AsyncStorage.setItem('authToken', response.data.accessToken);
-        return true;
+      if (response && response.data) {
+        return response.data;
+      } else {
+        throw new Error('La respuesta del servidor no contiene los datos de autenticación.');
       }
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    }
-  },
-  
-  async logout(): Promise<boolean> {
-    try {
-      await AsyncStorage.removeItem('authToken');
-      return true;
-    } catch (error) {
-      console.error('Error during logout:', error);
-      return false;
-    }
-  },
 
-  async changePassword(password: string): Promise<boolean> {
-    try {
-      const response = await apiClient.post('/auth/change-password', { password }, true);
-      if (response.status !== 200) return false;
-      return true;
     } catch (error) {
-      return false;
+      console.error('Error en el servicio de login:', error);
+      throw new Error('Error al intentar iniciar sesión. Verifica tus credenciales y la torre seleccionada.');
     }
-  },
-  
-  async isAuthenticated(): Promise<boolean> {
+  }
+
+  /**
+   * Realiza la petición de cambio de contraseña al backend.
+   * @param password La nueva contraseña.
+   */
+  async changePassword(password: string): Promise<void> {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      if (!token) return false;
-      return true
+      await apiClient.post('/auth/change-password', { password }, true);
     } catch (error) {
-      return false;
+      console.error('Error en el servicio de cambio de contraseña:', error);
+      throw new Error('No se pudo cambiar la contraseña.');
     }
-  },
-};
+  }
+}
+
+export const authService = new AuthService();
