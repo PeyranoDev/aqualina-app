@@ -3,7 +3,6 @@ import { StyleSheet, View, Text, FlatList, TouchableOpacity, Alert, ActivityIndi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { vehicleService, Vehicle, VehicleRequest } from '../../lib/services/vehicle-service';
-import { vehicleService, Vehicle, VehicleRequest } from '../../lib/services/vehicle-service';
 
 export default function GarageScreen() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -12,12 +11,6 @@ export default function GarageScreen() {
 
   const fetchVehicles = async () => {
     try {
-      setLoading(true);
-      const data = await vehicleService.getUserVehicles();
-      setVehicles(data);
-    } catch (error) {
-      console.error('Error fetching vehicles:', error.message);
-      Alert.alert('Error', 'No se pudieron cargar los vehículos');
       setLoading(true);
       const data = await vehicleService.getUserVehicles();
       setVehicles(data);
@@ -37,22 +30,7 @@ export default function GarageScreen() {
 
     const requestVehicle = async (vehicle: Vehicle) => {
     setRequestLoading(vehicle.Id);
-    const requestVehicle = async (vehicle: Vehicle) => {
-    setRequestLoading(vehicle.Id);
     try {
-      const request = await vehicleService.requestVehicle(vehicle.Id);
-      
-      if (request) {
-        Alert.alert(
-          'Solicitud enviada', 
-          'Seguridad ha sido notificado y preparará su vehículo.'
-        );
-      } else {
-        throw new Error('No se pudo crear la solicitud');
-      }
-    } catch (error) {
-      console.error('Error requesting vehicle:', error.message);
-      Alert.alert('Error', 'No se pudo enviar la solicitud');
       const request = await vehicleService.requestVehicle(vehicle.Id);
       
       if (request) {
@@ -100,9 +78,7 @@ export default function GarageScreen() {
             );
           }}
           disabled={requestLoading === item.Id}
-          disabled={requestLoading === item.Id}
         >
-          {requestLoading === item.Id ? (
           {requestLoading === item.Id ? (
             <ActivityIndicator color="white" size="small" />
           ) : (
@@ -264,13 +240,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   emptyAddButton: {
-  emptyAddButton: {
     backgroundColor: '#0066cc',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
   },
-  emptyAddButtonText: {
   emptyAddButtonText: {
     color: 'white',
     fontWeight: 'bold',

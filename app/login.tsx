@@ -20,9 +20,10 @@ import { useAuth } from '@/lib/context/auth-context';
 export default function LoginScreen() {
   const [credentials, setCredentials] = useState({
     Username: '',
-    Password: ''
+    Password: '',
+    SelectedTowerId: 0
   });
-  const { login } = useAuth();
+  const { signIn } = useAuth();
   const [loading, setLoading] = useState(false);
   const shift = useRef(new Animated.Value(0)).current;
 
@@ -61,21 +62,14 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
-      const success = await login(credentials);
-      if (success) {
-        router.replace('/');
-      } else {
-        Alert.alert('Error de inicio de sesión', 'Credenciales inválidas');
-      }
+      credentials.SelectedTowerId = 1;
+      await signIn(credentials);
+
     } catch (error) {
-      if (error instanceof Error) {
       if (error instanceof Error) {
         Alert.alert('Error de inicio de sesión', error.message);
       } else {
-        Alert.alert('Error de inicio de sesión', 'Error desconocido');
-      }
-      } else {
-        Alert.alert('Error de inicio de sesión', 'Error desconocido');
+        Alert.alert('Error de inicio de sesión', 'Ocurrió un error desconocido.');
       }
     } finally {
       setLoading(false);

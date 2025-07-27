@@ -100,8 +100,6 @@ export default function ProfileScreen() {
             style={styles.input}
             value={name}
             onChangeText={setName}
-            value={name}
-            onChangeText={setName}
             placeholder="Ingrese su nombre completo"
           />
 
@@ -110,9 +108,6 @@ export default function ProfileScreen() {
           <Text style={styles.label}>Apellido</Text>
           <TextInput
             style={styles.input}
-            value={surname}
-            onChangeText={setSurname}
-            placeholder="Ingrese su nombre completo"
             value={surname}
             onChangeText={setSurname}
             placeholder="Ingrese su nombre completo"
