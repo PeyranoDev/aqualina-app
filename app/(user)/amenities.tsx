@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView, ActivityIndicator, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { reservationService, Reservation, CreateReservationDto } from '../../lib/services/reservation-service';
+import { reservationService, Reservation, CreateReservationDto } from '../../lib/services/reservation-service';
 
 // Horarios disponibles
 const weekdaySlots = ['19:00', '20:00', '21:00'];
@@ -48,6 +49,11 @@ export default function AmenitiesScreen() {
     } catch (error) {
       console.error('Error fetching reservations:', error.message);
       Alert.alert('Error', 'No se pudieron cargar las reservas');
+      const reservations = await reservationService.getReservationsByDate(formattedDate);
+      setExistingReservations(reservations);
+    } catch (error) {
+      console.error('Error fetching reservations:', error.message);
+      Alert.alert('Error', 'No se pudieron cargar las reservas');
     } finally {
       setLoading(false);
     }
@@ -56,6 +62,7 @@ export default function AmenitiesScreen() {
   // Verificar si un horario ya está reservado
   const isTimeSlotReserved = (timeSlot: string) => {
     return existingReservations.some(reservation => 
+      reservation.Start_time === timeSlot && reservation.Status === 'confirmed'
       reservation.Start_time === timeSlot && reservation.Status === 'confirmed'
     );
   };

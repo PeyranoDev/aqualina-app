@@ -8,6 +8,7 @@ export default function NewsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Función para cargar noticias
   const fetchNews = async () => {
     try {
       const data = await newsService.getAllNews();

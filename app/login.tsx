@@ -69,7 +69,11 @@ export default function LoginScreen() {
       }
     } catch (error) {
       if (error instanceof Error) {
+      if (error instanceof Error) {
         Alert.alert('Error de inicio de sesión', error.message);
+      } else {
+        Alert.alert('Error de inicio de sesión', 'Error desconocido');
+      }
       } else {
         Alert.alert('Error de inicio de sesión', 'Error desconocido');
       }
@@ -77,6 +81,7 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -183,3 +188,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   }
 });
+

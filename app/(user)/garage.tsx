@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, FlatList, TouchableOpacity, Alert, ActivityIndi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { vehicleService, Vehicle, VehicleRequest } from '../../lib/services/vehicle-service';
+import { vehicleService, Vehicle, VehicleRequest } from '../../lib/services/vehicle-service';
 
 export default function GarageScreen() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -17,11 +18,18 @@ export default function GarageScreen() {
     } catch (error) {
       console.error('Error fetching vehicles:', error.message);
       Alert.alert('Error', 'No se pudieron cargar los vehículos');
+      setLoading(true);
+      const data = await vehicleService.getUserVehicles();
+      setVehicles(data);
+    } catch (error) {
+      console.error('Error fetching vehicles:', error.message);
+      Alert.alert('Error', 'No se pudieron cargar los vehículos');
     } finally {
       setLoading(false);
     }
   };
 
+  
   
   useEffect(() => {
     fetchVehicles();
@@ -29,7 +37,22 @@ export default function GarageScreen() {
 
     const requestVehicle = async (vehicle: Vehicle) => {
     setRequestLoading(vehicle.Id);
+    const requestVehicle = async (vehicle: Vehicle) => {
+    setRequestLoading(vehicle.Id);
     try {
+      const request = await vehicleService.requestVehicle(vehicle.Id);
+      
+      if (request) {
+        Alert.alert(
+          'Solicitud enviada', 
+          'Seguridad ha sido notificado y preparará su vehículo.'
+        );
+      } else {
+        throw new Error('No se pudo crear la solicitud');
+      }
+    } catch (error) {
+      console.error('Error requesting vehicle:', error.message);
+      Alert.alert('Error', 'No se pudo enviar la solicitud');
       const request = await vehicleService.requestVehicle(vehicle.Id);
       
       if (request) {
@@ -77,7 +100,9 @@ export default function GarageScreen() {
             );
           }}
           disabled={requestLoading === item.Id}
+          disabled={requestLoading === item.Id}
         >
+          {requestLoading === item.Id ? (
           {requestLoading === item.Id ? (
             <ActivityIndicator color="white" size="small" />
           ) : (
@@ -107,6 +132,7 @@ export default function GarageScreen() {
           data={vehicles}
           renderItem={renderVehicleItem}
           keyExtractor={item => item.Id}
+          keyExtractor={item => item.Id}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -132,10 +158,26 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
   screenTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
+  },
+  addButton: {
+    backgroundColor: '#0066cc',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addButton: {
     backgroundColor: '#0066cc',
@@ -222,11 +264,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   emptyAddButton: {
+  emptyAddButton: {
     backgroundColor: '#0066cc',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
   },
+  emptyAddButtonText: {
   emptyAddButtonText: {
     color: 'white',
     fontWeight: 'bold',
