@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { userService } from '../../lib/services/user-service';
 import { useAuth } from '@/lib/context/auth-context';
 import { router } from 'expo-router';
-import { User } from '@/lib/types/user';
+import { User } from '@/lib/interfaces/user';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<User | null>(null);

@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable } from '
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { userService } from '@/lib/services/user-service';
-import { UserForResponse } from '@/lib/types/user';
+import { UserForResponse } from '@/lib/interfaces/user';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Users() {

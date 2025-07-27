@@ -1,94 +1,98 @@
-import { useEffect, useRef, useState } from 'react';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import Constants from 'expo-constants';
+import { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
-import { EventSubscription } from 'expo-modules-core';
-import { notificationService } from '@/lib/services/notification-service'; 
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import { useRouter } from 'expo-router';
 
+// Configuración global para cómo se deben manejar las notificaciones cuando la app está en primer plano.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldPlaySound: true,
     shouldSetBadge: true,
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
-export function useNotifications() {
-  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const notificationListener = useRef<EventSubscription | null>(null);
-  const responseListener = useRef<EventSubscription | null>(null);
+/**
+ * Hook para gestionar toda la lógica de notificaciones push del dispositivo.
+ * Se encarga de permisos, obtención de token y listeners de eventos.
+ */
+export const useNotifications = () => {
+  const [devicePushToken, setDevicePushToken] = useState<string | undefined>();
+  const [notification, setNotification] = useState<Notifications.Notification | undefined>();
+  const router = useRouter();
 
   useEffect(() => {
-    const registerForPushNotifications = async () => {
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'default',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FF231F7C',
-        });
-      }
-
-      if (!Device.isDevice) {
-        console.warn('Debe usar un dispositivo físico para recibir notificaciones push.');
-        return;
-      }
-
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus !== 'granted') {
-        console.warn('Permisos de notificaciones denegados');
-        return;
-      }
-
-      const projectId =
-        Constants?.expoConfig?.extra?.eas?.projectId ??
-        Constants?.easConfig?.projectId;
-
-      if (!projectId) {
-        console.warn('Project ID no encontrado');
-        return;
-      }
-
-      try {
-        const token = await Notifications.getExpoPushTokenAsync({ projectId });
-        setExpoPushToken(token.data);
-        console.log('Push Token:', token.data);
-
-        await notificationService.registerTokenOnServer(
-          token.data,
-          Platform.OS,
-          Device.modelName ?? 'unknown'
-        );
-      } catch (e) {
-        console.error('Error registrando token push:', e);
-      }
-    };
-
-    registerForPushNotifications();
-
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-      console.log('Notificación recibida:', notification);
+    // Listener para cuando se recibe una notificación mientras la app está abierta.
+    const notificationReceivedListener = Notifications.addNotificationReceivedListener(notification => {
+      setNotification(notification);
+      console.log('Notificación recibida en primer plano:', notification);
     });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('Usuario tocó notificación:', response);
+    // Listener para cuando el usuario interactúa con una notificación (la toca).
+    const notificationResponseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Usuario interactuó con la notificación:', response);
+      const data = response.notification.request.content.data;
+      // Si la notificación trae una URL, navega a esa pantalla.
+      if (data && data.url) {
+        router.push(data.url as any);
+      }
     });
 
+    // Función de limpieza para remover los listeners cuando el componente se desmonte.
     return () => {
-      notificationListener.current?.remove();
-      responseListener.current?.remove();
+      notificationReceivedListener.remove();
+      notificationResponseListener.remove();
     };
   }, []);
 
-  return {
-    expoPushToken,
+  /**
+   * Registra el dispositivo para notificaciones push. Pide permisos y obtiene el token nativo.
+   * @returns El token del dispositivo (string) o undefined si falla.
+   */
+  const registerForPushNotificationsAsync = async (): Promise<string | undefined> => {
+    if (!Device.isDevice) {
+      console.warn('Las notificaciones push solo funcionan en dispositivos físicos.');
+      return;
+    }
+
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== 'granted') {
+      console.error('El usuario no concedió permisos para notificaciones.');
+      return;
+    }
+    
+    // Configuración del canal de notificación para Android (obligatorio).
+    if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+            name: 'default',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF231F7C',
+        });
+    }
+
+    try {
+      const token = (await Notifications.getDevicePushTokenAsync()).data;
+      console.log('Token de dispositivo nativo obtenido:', token);
+      setDevicePushToken(token);
+      return token;
+    } catch (error) {
+      console.error('Error al obtener el token de notificación del dispositivo:', error);
+    }
   };
-}
+
+  return {
+    devicePushToken,
+    notification,
+    registerForPushNotificationsAsync,
+  };
+};

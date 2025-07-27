@@ -1,142 +1,125 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter, useSegments } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import { User } from '../interfaces/user';
+import { useNotifications } from '../hooks/use-notifications'; // Importamos el hook
+import NotificationService from '../services/notification-service'; // Importamos el servicio
 import { authService, LoginCredentials } from '../services/auth-service';
-import { userService, UserProfile, User } from '../services/user-service';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { notificationService } from '../services/notification-service';
 
-export type UserRole = 'user' | 'security' | 'admin';
+const AUTH_TOKEN_KEY = 'authToken';
+const USER_DATA_KEY = 'userData';
 
-type AuthContextType = {
+interface AuthContextType {
+  signIn: (credentials: LoginCredentials) => Promise<void>;
+  signOut: () => void;
+  user: User | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
-  user: UserProfile | null;
-  userRole: UserRole | null;
-  login: (credentials: LoginCredentials) => Promise<boolean>;
-  logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-  setIsLoading: (loading: boolean) => void;
-  updateUserProfile: (updateData: Partial<User>) => Promise<void>;
-};
+  activeTowerId: string | null;
+  setActiveTowerId: (towerId: string) => void;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+  }
+  return context;
+};
 
-  const loadUser = async () => {
-    try {
-      const userData = await userService.getUser();
-      setUser(userData);
-      setUserRole(userData?.role || null);
-      setIsAuthenticated(true);
-      console.log(userRole)
-      try {
-        const pushToken = await notificationService.getPushToken();
-        if (pushToken) {
-          await notificationService.registerDevice(pushToken);
-        }
-      } catch (error) {
-        console.error('Error registrando push token:', error);
-      }
-    } catch (error) {
-      console.error('Error loading user:', error);
-      setUser(null);
-      setUserRole(null);
-      setIsAuthenticated(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateUserProfile = async (updateData: Partial<User>) => {
-    try {
-      const updatedUser = await userService.updateUser(updateData);
-      if (updatedUser) {
-        setUser(prev => prev ? {...prev, ...updatedUser} : null);
-        if (updatedUser.role) {
-          setUserRole(updatedUser.role);
-        }
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-    }
-  };
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [activeTowerId, setActiveTowerIdState] = useState<string | null>(null);
+  const segments = useSegments();
+  const router = useRouter();
+  
+  // Usamos nuestro hook de notificaciones para acceder a su funcionalidad.
+  const { registerForPushNotificationsAsync } = useNotifications();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const loadAuthData = async () => {
       try {
-        const token = await AsyncStorage.getItem('authToken');
-        if (token) {
-          await loadUser();
+        const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+        const storedUser = await SecureStore.getItemAsync(USER_DATA_KEY);
+        
+        if (token && storedUser) {
+          const parsedUser: User = JSON.parse(storedUser);
+          setUser(parsedUser);
+          // Opcional: podrías guardar y cargar también el activeTowerId
         }
       } catch (error) {
-        console.error('Auth check error:', error);
-        setIsAuthenticated(false);
-        setUser(null);
-        setUserRole(null);
-      } finally {
-        setIsLoading(false);
+        console.error("Error cargando datos de autenticación:", error);
       }
     };
-    
-    checkAuth();
+
+    loadAuthData();
   }, []);
 
-  const login = async (credentials: LoginCredentials) => {
-    setIsLoading(true);
+  useEffect(() => {
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!user && !inAuthGroup) {
+      router.replace('/login');
+    } else if (user && inAuthGroup) {
+        // Redirigir basado en rol
+        switch (user.role) {
+            case "admin":
+                router.replace('/(admin)');
+                break;
+            case "security":
+                router.replace('/(security)');
+                break;
+            default:
+                router.replace('/(user)');
+                break;
+        }
+    }
+  }, [user, segments]);
+
+  const signIn = async (credentials: LoginCredentials) => {
     try {
-      const { success } = await authService.login(credentials);
-      if (success) {
-        await loadUser();
-        return true;
+      const authResponse = await authService.login(credentials);
+      
+      setUser(authResponse.user);
+      await SecureStore.setItemAsync(AUTH_TOKEN_KEY, authResponse.token);
+      await SecureStore.setItemAsync(USER_DATA_KEY, JSON.stringify(authResponse.user));
+      
+      // --- ORQUESTACIÓN DE NOTIFICACIONES ---
+      // 1. Justo después del login, intentamos registrar para notificaciones.
+      const deviceToken = await registerForPushNotificationsAsync();
+
+      // 2. Si obtenemos un token, se lo pasamos al servicio para que lo envíe al backend.
+      if (deviceToken) {
+        await NotificationService.registerToken(deviceToken);
       }
-      return false;
+      
     } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
+      console.error('Fallo en el inicio de sesión:', error);
+      throw new Error('Credenciales incorrectas. Por favor, inténtelo de nuevo.');
     }
   };
 
-  const logout = async () => {
-    setIsLoading(true);
+  const signOut = async () => {
     try {
-      await authService.logout();
-      await notificationService.unregisterDevice();
-      setUser(null);
-      setUserRole(null);
-      setIsAuthenticated(false);
+        await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+        await SecureStore.deleteItemAsync(USER_DATA_KEY);
+        setUser(null);
+        setActiveTowerIdState(null);
+        // Opcional: Informar al backend que el usuario cerró sesión para invalidar el token de notificación.
     } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setIsLoading(false);
+        console.error("Error durante el cierre de sesión:", error);
     }
   };
+
+  const setActiveTowerId = (towerId: string) => {
+    // Aquí podrías guardar el ID en SecureStore si quieres que sea persistente
+    setActiveTowerIdState(towerId);
+  }
 
   return (
-    <AuthContext.Provider
-      value={{ 
-        isAuthenticated, 
-        isLoading, 
-        user,
-        userRole,
-        login, 
-        logout, 
-        refreshUser: loadUser,
-        setIsLoading,
-        updateUserProfile
-      }}>
+    <AuthContext.Provider value={{ signIn, signOut, user, isAuthenticated: !!user, activeTowerId, setActiveTowerId }}>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
-  return context;
 };

@@ -1,6 +1,6 @@
 import { apiClient } from '../api-client';
-import { PagedResponse, PaginationParams } from '../types';
-import { User, UserFilterParams, UserForResponse } from '../types/user';
+import { PagedResponse, PaginationParams } from '../interfaces';
+import { User, UserFilterParams, UserForResponse } from '../interfaces/user';
 
 export const userService = {
   async getUser(): Promise<UserForResponse | null> {
