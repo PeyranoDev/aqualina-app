@@ -7,7 +7,6 @@ import { getAmenities, getAvailableSlots } from '../../lib/services/amenity-serv
 import { createReservation } from '../../lib/services/reservation-service';
 import { useAuth } from '../../lib/context/auth-context';
 
-// Configuración del calendario en español
 LocaleConfig.locales['es'] = {
   monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
   monthNamesShort: ['Ene.', 'Feb.', 'Mar.', 'Abr.', 'May.', 'Jun.', 'Jul.', 'Ago.', 'Sep.', 'Oct.', 'Nov.', 'Dic.'],
@@ -32,12 +31,10 @@ export default function AmenitiesScreen() {
   const { user } = useAuth();
 
   useEffect(() => {
-    // Cargar los amenities disponibles al iniciar la pantalla
     const fetchAmenities = async () => {
       setLoadingAmenities(true);
       const data = await getAmenities();
       setAmenities(data);
-      // Seleccionar el primer amenity por defecto
       if (data.length > 0) {
         setSelectedAmenity(data[0]);
       }
@@ -48,7 +45,6 @@ export default function AmenitiesScreen() {
   }, []);
 
   useEffect(() => {
-    // Cargar los horarios cuando se selecciona un amenity o una fecha
     if (selectedAmenity && selectedDate) {
       const fetchSlots = async () => {
         setLoadingSlots(true);
@@ -191,7 +187,7 @@ export default function AmenitiesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#f5f5f5',
   },
   contentContainer: {
     padding: 16,

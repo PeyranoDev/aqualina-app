@@ -8,7 +8,6 @@ export default {
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "myapp",
-    userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
       supportsTablet: true
@@ -20,7 +19,7 @@ export default {
         backgroundColor: "#ffffff"
       },
       package: "com.aoristotech.aqualinaapp",
-      googleServicesFile: "./android/app/google-services.json"
+      googleServicesFile: "./env/google-services.json"
     },
     web: {
       bundler: "metro",

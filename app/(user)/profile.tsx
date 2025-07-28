@@ -15,7 +15,7 @@ export default function ProfileScreen() {
   const [surname, setSurname] = useState('');
   const [apartment, setApartment] = useState('');
 
-  const { user, refreshUser, logout } = useAuth();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -65,7 +65,7 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut();
       router.replace('/login');
     } catch (error) {
       console.error('Error signing out:', error.message);
@@ -95,15 +95,12 @@ export default function ProfileScreen() {
           />
           
           <Text style={styles.label}>Nombre</Text>
-          <Text style={styles.label}>Nombre</Text>
           <TextInput
             style={styles.input}
             value={name}
             onChangeText={setName}
             placeholder="Ingrese su nombre completo"
           />
-
-          <Text style={styles.label}>Apellido</Text>
 
           <Text style={styles.label}>Apellido</Text>
           <TextInput

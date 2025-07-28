@@ -108,7 +108,6 @@ export default function GarageScreen() {
           data={vehicles}
           renderItem={renderVehicleItem}
           keyExtractor={item => item.Id}
-          keyExtractor={item => item.Id}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -134,26 +133,10 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
   screenTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
-  },
-  addButton: {
-    backgroundColor: '#0066cc',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   addButton: {
     backgroundColor: '#0066cc',

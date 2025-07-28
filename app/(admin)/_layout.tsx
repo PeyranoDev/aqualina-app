@@ -19,8 +19,6 @@ export default function AdminLayout() {
   if (isLoading || !pathname) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG_COLOR }}>
-        {/* 2. Añadir StatusBar para la pantalla de carga */}
-        <StatusBar backgroundColor={BG_COLOR} style="dark" />
         <ActivityIndicator size="large" color={ACTIVE_TINT_COLOR} />
       </View>
     );
@@ -46,7 +44,6 @@ export default function AdminLayout() {
   if (!user || user.role.toUpperCase() !== 'ADMIN') {
      return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG_COLOR }}>
-        <StatusBar backgroundColor={BG_COLOR} style="dark" />
         <ActivityIndicator size="large" color={ACTIVE_TINT_COLOR} />
       </View>
     );
@@ -54,8 +51,6 @@ export default function AdminLayout() {
 
   return (
     <>
-      {/* 3. Añadir StatusBar para el layout principal */}
-      <StatusBar backgroundColor={BG_COLOR} style="dark" />
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: ACTIVE_TINT_COLOR,

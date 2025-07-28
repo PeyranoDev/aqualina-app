@@ -3,7 +3,6 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../../lib/context/auth-context';
 import { ActivityIndicator, View } from 'react-native';
 import { useEffect } from 'react';
-import { StatusBar } from 'expo-status-bar'; // <-- 1. Importar StatusBar
 
 const BG_COLOR_SECURITY = '#f8f9fa';
 const ACTIVE_TINT_COLOR_SECURITY = '#f39c12';
@@ -19,8 +18,6 @@ export default function SecurityLayout() {
   if (isLoading || !pathname) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG_COLOR_SECURITY }}>
-        {/* 2. Añadir StatusBar para la pantalla de carga */}
-        <StatusBar backgroundColor={BG_COLOR_SECURITY} style="dark" />
         <ActivityIndicator size="large" color={ACTIVE_TINT_COLOR_SECURITY} />
       </View>
     );
@@ -35,7 +32,6 @@ export default function SecurityLayout() {
    if (!user || user.role.toUpperCase() !== 'SECURITY') {
      return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG_COLOR_SECURITY }}>
-        <StatusBar backgroundColor={BG_COLOR_SECURITY} style="dark" />
         <ActivityIndicator size="large" color={ACTIVE_TINT_COLOR_SECURITY} />
       </View>
     );
@@ -43,8 +39,6 @@ export default function SecurityLayout() {
 
   return (
     <>
-      {/* 3. Añadir StatusBar para el layout principal */}
-      <StatusBar backgroundColor={BG_COLOR_SECURITY} style="dark" />
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: ACTIVE_TINT_COLOR_SECURITY,

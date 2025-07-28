@@ -1,33 +1,22 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
-import { View, StyleSheet, Animated, Platform, StatusBar } from 'react-native';
+import { View, StyleSheet, Animated, Platform } from 'react-native';
 import { Slot, router, useSegments } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/lib/context/auth-context';
 import { useNotifications } from '@/lib/hooks/use-notifications';
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
-
+import { StatusBar } from 'expo-status-bar';
 
 function AppNavigator() {
   const { user, isLoading } = useAuth(); 
   const segments = useSegments();
 
   useEffect(() => {
-    // Si la autenticación aún está cargando, no hacemos nada.
+
     if (isLoading) return;
 
-    // Define si la ruta actual es una página "protegida" o no.
-    // Usamos `segments.length > 0` para asegurarnos que no actúe en la ruta raíz inicial.
     const inApp = segments.length > 0 && segments[0] !== 'login';
 
-    // --- LÓGICA DE REDIRECCIÓN CORREGIDA ---
-
-    // 1. Si el usuario está logueado pero se encuentra en la pantalla de login,
-    //    lo redirigimos a su pantalla principal.
     if (user && !inApp) {
       const upperCaseRole = user.role.toUpperCase();
       const targetRoute = {
@@ -40,28 +29,22 @@ function AppNavigator() {
         router.replace(targetRoute);
       }
     } 
-    // 2. Si el usuario NO está logueado pero está intentando acceder a una ruta protegida,
-    //    lo enviamos al login.
     else if (!user && inApp) {
       router.replace('/login');
     }
 
   }, [user, segments, isLoading]);
 
-  // Durante la carga inicial, el splash screen está visible.
   if (isLoading) {
     return null;
   }
 
-  // Una vez cargado, se muestra el contenido de la ruta correcta.
   return <Slot />;
 }
 
 export default function RootLayout() {
   useNotifications();
 
-  // El resto del código de animación no necesita cambios.
-  const paddingTop = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
   const fadeSplash = useRef(new Animated.Value(1)).current;
   const fadeContent = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -123,9 +106,9 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <StatusBar translucent style='dark' />
       <AuthProvider>
-        <View style={[styles.container, { paddingTop }]}>
+        <View style={[styles.container, ]}>
           <Animated.View style={{ flex: 1, opacity: fadeContent }}>
             <AppNavigator />
           </Animated.View>
@@ -136,7 +119,7 @@ export default function RootLayout() {
           >
             <LinearGradient
               colors={['#a1c4fd', '#c2e9fb']}
-              style={[styles.splashContainer, { paddingTop }]}
+              style={[styles.splashContainer]}
             >
               <Animated.Text
                 style={[styles.title, { transform: [{ scale: scaleAnim }] }]}
