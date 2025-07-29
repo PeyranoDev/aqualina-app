@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/context/auth-context';
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   
   const menuItems = [
     { 
@@ -64,7 +64,7 @@ export default function AdminDashboard() {
         ))}
       </View>
       
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+      <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
         <Text style={styles.logoutText}>Cerrar Sesión</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -78,6 +78,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   header: {
+    marginTop: 20,
     marginBottom: 30,
     alignItems: 'center',
   },

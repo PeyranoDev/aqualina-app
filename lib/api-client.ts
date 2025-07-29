@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants'
 
 export type ApiResponseBackend<T> = {
@@ -23,7 +23,7 @@ const BACKEND_URI = Constants.expoConfig?.extra?.backendUri ?? ''
 
 const getAuthToken = async (): Promise<string | null> => {
   try {
-    return await AsyncStorage.getItem('authToken')
+    return await SecureStore.getItemAsync("authToken");
   } catch {
     return null
   }
@@ -31,9 +31,7 @@ const getAuthToken = async (): Promise<string | null> => {
 
 const buildOptions = async (method: string, body?: any, authenticated: boolean = true): Promise<RequestInit> => {
   const headers: HeadersInit = {}
-  if (method !== 'GET' && method !== 'DELETE') {
     headers['Content-Type'] = 'application/json'
-  }
   if (authenticated) {
     const token = (await getAuthToken())?.trim()
     if (token) {

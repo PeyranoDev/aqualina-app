@@ -33,7 +33,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [activeTowerId, setActiveTowerIdState] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // <-- AÑADIDO: Inicia en true
+  const [isLoading, setIsLoading] = useState(true); 
   const segments = useSegments();
   const router = useRouter();
   
@@ -65,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const authResponse = await authService.login(credentials);
       
       setUser(authResponse.user);
+
       await SecureStore.setItemAsync(AUTH_TOKEN_KEY, authResponse.accessToken);
       await SecureStore.setItemAsync(USER_DATA_KEY, JSON.stringify(authResponse.user));
       

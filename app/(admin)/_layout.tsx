@@ -54,7 +54,7 @@ export default function AdminLayout() {
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: ACTIVE_TINT_COLOR,
-          headerShown: true,
+          headerShown: false,
           headerTitle: getHeaderTitle(),
           headerStyle: { backgroundColor: BG_COLOR },
           tabBarStyle: { backgroundColor: BG_COLOR },

@@ -1,24 +1,28 @@
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, TextInput } from 'react-native';
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { userService } from '@/lib/services/user-service';
-import { UserForResponse } from '@/lib/interfaces/user';
+import { User, UserFilterParams } from '@/lib/interfaces/user';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Users() {
-  const [users, setUsers] = useState<UserForResponse[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [pageNumber, setPageNumber] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<UserFilterParams>({});
   const pageSize = 10;
 
-  const fetchUsers = async (page: number) => {
+  const fetchUsers = async (page: number, filters: UserFilterParams) => {
     setLoading(true);
     try {
-      const result = await userService.getUsers({}, { pageNumber: page, pageSize });
+
+      const result = await userService.getUsers(filters, { pageNumber: page, pageSize });
       if (result) {
         setUsers(result.data);
         setTotalPages(result.totalPages);
+        setPageNumber(page);
       }
     } catch (err) {
       console.error('Error al traer usuarios:', err);
@@ -28,26 +32,57 @@ export default function Users() {
   };
 
   useEffect(() => {
-    fetchUsers(1);
+    fetchUsers(1, {});
   }, []);
+
+  const handleApplyFilters = () => {
+    const newFilters: UserFilterParams = { name: searchQuery };
+    setActiveFilters(newFilters);
+    fetchUsers(1, newFilters);
+  };
+  
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setActiveFilters({});
+    fetchUsers(1, {});
+  };
 
   const handlePrev = async () => {
     if (pageNumber <= 1) return;
     const prevPage = pageNumber - 1;
-    await fetchUsers(prevPage);
-    setPageNumber(prevPage);
+    await fetchUsers(prevPage, activeFilters);
   };
 
   const handleNext = async () => {
     if (pageNumber >= totalPages) return;
     const nextPage = pageNumber + 1;
-    await fetchUsers(nextPage);
-    setPageNumber(nextPage);
+    await fetchUsers(nextPage, activeFilters);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Gestión de Usuarios</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Gestión de Usuarios</Text>
+      </View>
+      
+      <View style={styles.filterContainer}>
+        <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por nombre..."
+            placeholderTextColor="#888"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleApplyFilters}
+        />
+        <View style={styles.buttonGroup}>
+            <Pressable onPress={handleApplyFilters} style={styles.filterButton}>
+                <Text style={styles.buttonText}>Filtrar</Text>
+            </Pressable>
+            <Pressable onPress={handleClearFilters} style={[styles.filterButton, styles.clearButton]}>
+                <Text style={styles.buttonText}>Limpiar</Text>
+            </Pressable>
+        </View>
+      </View>
 
       {loading ? (
         <ActivityIndicator size="large" color="#000" />
@@ -80,7 +115,6 @@ export default function Users() {
             )}
           />
 
-          {/* Paginación */}
           <View style={styles.pagination}>
             <Pressable
               onPress={handlePrev}
@@ -118,11 +152,46 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f8f9fa',
   },
+  header: {
+    marginTop: 20,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
     color: '#2c3e50',
+    marginBottom: 20,
+  },
+  filterContainer: {
+    marginBottom: 20,
+  },
+  searchInput: {
+    height: 45,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    backgroundColor: 'white',
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  filterButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3498db',
+    padding: 12,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  clearButton: {
+    backgroundColor: '#e74c3c',
   },
   userCard: {
     backgroundColor: 'white',
@@ -187,6 +256,7 @@ const styles = StyleSheet.create({
     color: 'white',
     marginHorizontal: 5,
     fontSize: 14,
+    fontWeight: 'bold',
   },
   pageInfo: {
     fontSize: 14,

@@ -28,7 +28,7 @@ export interface User {
  * Define los parámetros para filtrar y ordenar los usuarios.
  * Corresponde a `UserFilterParams` del backend.
  */
-export interface UserFilterParams extends PaginationParams {
+export interface UserFilterParams {
   name?: string;
   surname?: string;
   username?: string;
