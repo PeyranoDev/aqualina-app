@@ -1,156 +1,223 @@
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, TextInput } from 'react-native';
-import { Link } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, TextInput, Modal } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState, useCallback } from 'react';
 import { userService } from '@/lib/services/user-service';
 import { User, UserFilterParams } from '@/lib/interfaces/user';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context'; 
 
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
   const [pageNumber, setPageNumber] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  
+  const [searchQuery, setSearchQuery] = useState(''); 
   const [activeFilters, setActiveFilters] = useState<UserFilterParams>({});
-  const pageSize = 10;
+  
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [tempFilters, setTempFilters] = useState<UserFilterParams>({
+    sortBy: 'name',
+    isSortAscending: true,
+  });
 
-  const fetchUsers = async (page: number, filters: UserFilterParams) => {
-    setLoading(true);
+  const pageSize = 15;
+
+  const fetchUsers = useCallback(async (page: number, filters: UserFilterParams, isNewSearch: boolean = false) => {
+    if (isNewSearch) {
+      setLoading(true);
+      setUsers([]); 
+    } else {
+      setLoadingMore(true);
+    }
+    
     try {
-
       const result = await userService.getUsers(filters, { pageNumber: page, pageSize });
-      if (result) {
-        setUsers(result.data);
+      if (result && result.data.length > 0) {
+        setUsers(prevUsers => isNewSearch ? result.data : [...prevUsers, ...result.data]);
         setTotalPages(result.totalPages);
         setPageNumber(page);
+      } else if (isNewSearch) {
+        setUsers([]);
+        setTotalPages(1);
+        setPageNumber(1);
       }
     } catch (err) {
       console.error('Error al traer usuarios:', err);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
-
-  useEffect(() => {
-    fetchUsers(1, {});
   }, []);
 
+  useEffect(() => {
+    fetchUsers(1, tempFilters, true);
+  }, [fetchUsers]);
+
+  const handleLoadMore = () => {
+    if (loadingMore || pageNumber >= totalPages) {
+      return;
+    }
+    fetchUsers(pageNumber + 1, activeFilters, false);
+  };
+
   const handleApplyFilters = () => {
-    const newFilters: UserFilterParams = { name: searchQuery };
+    const newFilters: UserFilterParams = { 
+      ...tempFilters,
+      name: searchQuery 
+    };
     setActiveFilters(newFilters);
-    fetchUsers(1, newFilters);
+    fetchUsers(1, newFilters, true);
+    setIsModalVisible(false);
   };
   
   const handleClearFilters = () => {
     setSearchQuery('');
-    setActiveFilters({});
-    fetchUsers(1, {});
+    const defaultFilters: UserFilterParams = { sortBy: 'name', isSortAscending: true };
+    setTempFilters(defaultFilters);
+    setActiveFilters(defaultFilters);
+    fetchUsers(1, defaultFilters, true);
   };
 
-  const handlePrev = async () => {
-    if (pageNumber <= 1) return;
-    const prevPage = pageNumber - 1;
-    await fetchUsers(prevPage, activeFilters);
+  const openFilterModal = () => {
+    setTempFilters(activeFilters);
+    setIsModalVisible(true);
   };
 
-  const handleNext = async () => {
-    if (pageNumber >= totalPages) return;
-    const nextPage = pageNumber + 1;
-    await fetchUsers(nextPage, activeFilters);
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return (
+      <View style={{ paddingVertical: 20 }}>
+        <ActivityIndicator size="large" color="#0066cc" />
+      </View>
+    );
   };
+  
+  const renderUserCard = ({ item }: { item: User }) => (
+    <View style={styles.userCard}>
+      <Text style={styles.userName}>{item.name} {item.surname}</Text>
+      <Text style={styles.userEmail}>{item.email}</Text>
+      {item.apartmentInfo ? (
+        <Text style={styles.apartmentInfo}>
+          Dept: {item.apartmentInfo.identifier}
+        </Text>
+      ) : (
+        <Text style={styles.apartmentInfo}>Sin información de departamento</Text>
+      )}
+      <View style={[styles.roleBadge, item.role === 'admin' && styles.adminBadge, item.role === 'security' && styles.securityBadge]}>
+        <Text style={styles.roleText}>{item.role}</Text>
+      </View>
+    </View>
+  );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Gestión de Usuarios</Text>
-      </View>
-      
-      <View style={styles.filterContainer}>
-        <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar por nombre..."
-            placeholderTextColor="#888"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleApplyFilters}
-        />
-        <View style={styles.buttonGroup}>
-            <Pressable onPress={handleApplyFilters} style={styles.filterButton}>
-                <Text style={styles.buttonText}>Filtrar</Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" />
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <StatusBar hidden />
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Ordenar y Filtrar</Text>
+
+            <Text style={styles.modalSectionTitle}>Ordenar por:</Text>
+            <View style={styles.optionGroup}>
+              {['name', 'surname', 'username'].map((field) => (
+                <Pressable
+                  key={field}
+                  style={[styles.optionButton, tempFilters.sortBy === field && styles.optionButtonSelected]}
+                  onPress={() => setTempFilters(prev => ({ ...prev, sortBy: field as 'name' | 'surname' | 'username' }))}
+                >
+                  <Text style={[styles.optionButtonText, tempFilters.sortBy === field && styles.optionButtonTextSelected]}>
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={styles.modalSectionTitle}>Dirección:</Text>
+            <View style={styles.optionGroup}>
+              <Pressable
+                style={[styles.optionButton, tempFilters.isSortAscending === true && styles.optionButtonSelected]}
+                onPress={() => setTempFilters(prev => ({ ...prev, isSortAscending: true }))}
+              >
+                <Text style={[styles.optionButtonText, tempFilters.isSortAscending === true && styles.optionButtonTextSelected]}>Ascendente</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.optionButton, tempFilters.isSortAscending === false && styles.optionButtonSelected]}
+                onPress={() => setTempFilters(prev => ({ ...prev, isSortAscending: false }))}
+              >
+                <Text style={[styles.optionButtonText, tempFilters.isSortAscending === false && styles.optionButtonTextSelected]}>Descendente</Text>
+              </Pressable>
+            </View>
+
+            <Pressable onPress={handleApplyFilters} style={[styles.filterButton, { width: '100%', marginTop: 20 }]}>
+              <Text style={styles.buttonText}>Aplicar Filtros</Text>
+            </Pressable>
+             <Pressable onPress={() => setIsModalVisible(false)} style={styles.closeModalButton}>
+              <Text style={styles.closeModalButtonText}>Cerrar</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Gestión de Usuarios</Text>
+        </View>
+        
+        <View style={styles.filterContainer}>
+          <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar por nombre..."
+              placeholderTextColor="#888"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleApplyFilters}
+          />
+          <View style={styles.buttonGroup}>
+            <Pressable onPress={openFilterModal} style={[styles.filterButton, styles.optionsButton]}>
+                <Ionicons name="options-outline" size={20} color="white" />
+                <Text style={styles.buttonText}>Filtros</Text>
             </Pressable>
             <Pressable onPress={handleClearFilters} style={[styles.filterButton, styles.clearButton]}>
                 <Text style={styles.buttonText}>Limpiar</Text>
             </Pressable>
+          </View>
         </View>
-      </View>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#000" />
-      ) : (
-        <>
+        {loading && pageNumber === 1 ? (
+          <ActivityIndicator size="large" color="#000" style={{ marginTop: 20 }}/>
+        ) : (
           <FlatList
             data={users}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.userCard}>
-                <Text style={styles.userName}>{item.name} {item.surname}</Text>
-                <Text style={styles.userEmail}>{item.email}</Text>
-                {item.apartmentInfo ? (
-                  <Text style={styles.apartmentInfo}>
-                    Dept: {item.apartmentInfo.identifier}
-                  </Text>
-                ) : (
-                  <Text style={styles.apartmentInfo}>Sin información de departamento</Text>
-                )}
-                <View
-                  style={[
-                    styles.roleBadge,
-                    item.role === 'admin' && styles.adminBadge,
-                    item.role === 'security' && styles.securityBadge
-                  ]}
-                >
-                  <Text style={styles.roleText}>{item.role}</Text>
-                </View>
-              </View>
-            )}
+            keyExtractor={(item, index) => `${item.id.toString()}-${index}`}
+            renderItem={renderUserCard}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={renderFooter}
+            contentContainerStyle={{ paddingBottom: 100 }}
           />
-
-          <View style={styles.pagination}>
-            <Pressable
-              onPress={handlePrev}
-              disabled={pageNumber === 1}
-              style={[styles.pageButton, pageNumber === 1 && styles.disabledButton]}
-            >
-              <Ionicons name="chevron-back" size={20} color="white" />
-              <Text style={styles.buttonText}>Anterior</Text>
-            </Pressable>
-
-            <Text style={styles.pageInfo}>Página {pageNumber} de {totalPages}</Text>
-
-            <Pressable
-              onPress={handleNext}
-              disabled={pageNumber === totalPages}
-              style={[styles.pageButton, pageNumber === totalPages && styles.disabledButton]}
-            >
-              <Text style={styles.buttonText}>Siguiente</Text>
-              <Ionicons name="chevron-forward" size={20} color="white" />
-            </Pressable>
-          </View>
-        </>
-      )}
-
-      <Link href="/" style={styles.backLink}>
-        Volver al panel
-      </Link>
-    </View>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#f8f9fa',
+  },
+  content: { 
+    flex: 1,
+    paddingHorizontal: 20,
   },
   header: {
     marginTop: 20,
@@ -179,6 +246,7 @@ const styles = StyleSheet.create({
   buttonGroup: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 10,
   },
   filterButton: {
     flex: 1,
@@ -188,10 +256,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#3498db',
     padding: 12,
     borderRadius: 8,
-    marginHorizontal: 5,
+  },
+  optionsButton: {
+    backgroundColor: '#2c3e50'
   },
   clearButton: {
     backgroundColor: '#e74c3c',
+  },
+  buttonText: {
+    color: 'white',
+    marginHorizontal: 5,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   userCard: {
     backgroundColor: 'white',
@@ -236,36 +312,65 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
   },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 22,
+    paddingBottom: 40, 
+    borderTopLeftRadius: 17,
+    borderTopRightRadius: 17,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
     marginTop: 15,
+    marginBottom: 10,
   },
-  pageButton: {
+  optionGroup: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#3498db',
-    padding: 10,
+    justifyContent: 'space-around',
+    marginBottom: 10,
+  },
+  optionButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 5,
     borderRadius: 8,
-  },
-  disabledButton: {
-    backgroundColor: '#bdc3c7',
-  },
-  buttonText: {
-    color: 'white',
+    borderWidth: 1,
+    borderColor: '#ddd',
     marginHorizontal: 5,
-    fontSize: 14,
+    alignItems: 'center',
+  },
+  optionButtonSelected: {
+    backgroundColor: '#3498db',
+    borderColor: '#3498db',
+  },
+  optionButtonText: {
+    color: '#333',
+  },
+  optionButtonTextSelected: {
+    color: 'white',
     fontWeight: 'bold',
   },
-  pageInfo: {
-    fontSize: 14,
-    color: '#2c3e50',
-  },
-  backLink: {
-    marginTop: 20,
-    color: '#0066cc',
-    textAlign: 'center',
+  closeModalButton: {
+    marginTop: 10,
     padding: 10,
+    alignItems: 'center',
   },
+  closeModalButtonText: {
+    color: '#e74c3c',
+    fontSize: 16,
+  }
 });

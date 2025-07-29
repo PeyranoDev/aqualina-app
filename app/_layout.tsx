@@ -106,7 +106,6 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar translucent style='dark' />
       <AuthProvider>
         <View style={[styles.container, ]}>
           <Animated.View style={{ flex: 1, opacity: fadeContent }}>

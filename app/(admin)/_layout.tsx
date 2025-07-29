@@ -3,7 +3,6 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../../lib/context/auth-context';
 import { ActivityIndicator, View } from 'react-native';
 import { useEffect } from 'react';
-import { StatusBar } from 'expo-status-bar'; // <-- 1. Importar StatusBar
 
 const BG_COLOR = '#f8f9fa';
 const ACTIVE_TINT_COLOR = '#c0392b';

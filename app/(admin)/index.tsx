@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/context/auth-context';
+import { StatusBar } from 'expo-status-bar';
 
 export default function AdminDashboard() {
   const { user, signOut } = useAuth();
