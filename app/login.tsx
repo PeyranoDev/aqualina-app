@@ -11,21 +11,39 @@ import {
   Keyboard,
   Animated,
   Platform,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  BackHandler 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router'; // 1. Importamos el hook para recibir parámetros
 import { useAuth } from '@/lib/context/auth-context';
 
 export default function LoginScreen() {
   const [credentials, setCredentials] = useState({
     Username: '',
     Password: '',
-    SelectedTowerId: 0
   });
-  const { signIn } = useAuth();
+  
+  // 2. Obtenemos los parámetros de la torre desde la navegación
+  const { towerName, towerId } = useLocalSearchParams<{ towerName: string, towerId: string }>();
+  
+  const { signIn, clearSelectedTower } = useAuth();
   const [loading, setLoading] = useState(false);
   const shift = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const backAction = () => {
+      clearSelectedTower();
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -60,11 +78,16 @@ export default function LoginScreen() {
       Alert.alert('Error', 'Por favor ingrese usuario y contraseña');
       return;
     }
+    if (!towerId) { // Verificamos el towerId que viene por parámetro
+      Alert.alert('Error', 'No se ha seleccionado ninguna torre. Vuelva atrás para seleccionar una.');
+      return;
+    }
     setLoading(true);
     try {
-      credentials.SelectedTowerId = 1;
-      await signIn(credentials);
-
+      await signIn({ 
+        ...credentials, 
+        SelectedTowerId: parseInt(towerId, 10)
+      });
     } catch (error) {
       if (error instanceof Error) {
         Alert.alert('Error de inicio de sesión', error.message);
@@ -76,9 +99,8 @@ export default function LoginScreen() {
     }
   };
 
-
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <Animated.View style={[styles.innerContainer, { transform: [{ translateY: shift }] }]}>
           <View style={styles.logoContainer}>
@@ -86,7 +108,8 @@ export default function LoginScreen() {
               source={{ uri: 'https://i.imgur.com/He6OT86.png' }}
               style={styles.logo}
             />
-            <Text style={styles.title}>Torre Aqualina</Text>
+            {/* 3. Usamos el towerName del parámetro para evitar el parpadeo */}
+            <Text style={styles.title}>{towerName || 'Aqualina'}</Text>
           </View>
           <View style={styles.formContainer}>
             <TextInput
@@ -120,10 +143,11 @@ export default function LoginScreen() {
                 <Text style={styles.buttonText}>Iniciar Sesión</Text>
               )}
             </TouchableOpacity>
+            <Text style={styles.swipeInfo}>Usa el gesto de "atrás" para cambiar de torre</Text>
           </View>
         </Animated.View>
       </TouchableWithoutFeedback>
-    </SafeAreaView>
+      </View>
   );
 }
 
@@ -135,7 +159,6 @@ const styles = StyleSheet.create({
   innerContainer: {
     flex: 1,
     padding: 20,
-    justifyContent: 'flex-start'
   },
   logoContainer: {
     alignItems: 'center',
@@ -180,6 +203,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold'
+  },
+  swipeInfo: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: 'gray',
+    fontSize: 14,
   }
 });
-

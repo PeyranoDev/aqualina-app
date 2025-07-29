@@ -57,10 +57,17 @@ const handleResponse = async <T>(response: Response): Promise<ApiResponseHandler
   }
   const parsed = raw as ApiResponseBackend<T>
   if (response.ok && parsed.success) {
-    console.info(parsed.message)
-    return {
-      status: response.status,
-      data: parsed.data!
+    if (parsed.data.data) {
+      return {
+        status: response.status,
+        data: parsed.data.data
+      }
+    }
+    else {
+      return {
+        status: response.status,
+        data: parsed.data!
+      }
     }
   }
   return {

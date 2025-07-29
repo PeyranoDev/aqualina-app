@@ -24,36 +24,24 @@ export default function Users() {
 
   const pageSize = 15;
 
-  const fetchUsers = useCallback(async (page: number, filters: UserFilterParams, isNewSearch: boolean = false) => {
-    if (isNewSearch) {
-      setLoading(true);
-      setUsers([]); 
-    } else {
-      setLoadingMore(true);
+const fetchUsers = async (page: number, filters: UserFilterParams) => {
+  setLoading(true);
+  try {
+    const result = await userService.getUsers(filters, { pageNumber: page, pageSize });
+    if (result) {
+      setUsers(result.data);
+      setTotalPages(result.totalPages);
     }
-    
-    try {
-      const result = await userService.getUsers(filters, { pageNumber: page, pageSize });
-      if (result && result.data.length > 0) {
-        setUsers(prevUsers => isNewSearch ? result.data : [...prevUsers, ...result.data]);
-        setTotalPages(result.totalPages);
-        setPageNumber(page);
-      } else if (isNewSearch) {
-        setUsers([]);
-        setTotalPages(1);
-        setPageNumber(1);
-      }
-    } catch (err) {
-      console.error('Error al traer usuarios:', err);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, []);
+  } catch (err) {
+    console.error('Error al traer usuarios:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  useEffect(() => {
-    fetchUsers(1, tempFilters, true);
-  }, [fetchUsers]);
+useEffect(() => {
+  fetchUsers(pageNumber, activeFilters);
+}, [pageNumber, activeFilters]);
 
   const handleLoadMore = () => {
     if (loadingMore || pageNumber >= totalPages) {

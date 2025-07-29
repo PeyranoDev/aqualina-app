@@ -3,6 +3,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../../lib/context/auth-context';
 import { ActivityIndicator, View } from 'react-native';
 import { useEffect } from 'react';
+import { StatusBar } from 'expo-status-bar';
 
 const BG_COLOR = '#f8f9fa';
 const ACTIVE_TINT_COLOR = '#c0392b';
@@ -50,6 +51,7 @@ export default function AdminLayout() {
 
   return (
     <>
+      <StatusBar style="dark" backgroundColor="#2c3e50" />
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: ACTIVE_TINT_COLOR,

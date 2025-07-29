@@ -1,5 +1,5 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
-import { View, StyleSheet, Animated, Platform } from 'react-native';
+import { View, StyleSheet, Animated, SafeAreaView } from 'react-native'; // 1. Importamos SafeAreaView
 import { Slot, router, useSegments } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -8,32 +8,37 @@ import { useNotifications } from '@/lib/hooks/use-notifications';
 import { StatusBar } from 'expo-status-bar';
 
 function AppNavigator() {
-  const { user, isLoading } = useAuth(); 
+  const { user, isLoading, selectedTower } = useAuth(); 
   const segments = useSegments();
 
   useEffect(() => {
-
     if (isLoading) return;
 
-    const inApp = segments.length > 0 && segments[0] !== 'login';
+    const inApp = segments.length > 0 && segments[0] !== 'login' && segments[0] !== 'select-tower';
 
-    if (user && !inApp) {
-      const upperCaseRole = user.role.toUpperCase();
-      const targetRoute = {
-        ADMIN: '/(admin)',
-        SECURITY: '/(security)',
-        USER: '/(user)',
-      }[upperCaseRole];
-      
-      if (targetRoute) {
-        router.replace(targetRoute);
-      }
-    } 
-    else if (!user && inApp) {
-      router.replace('/login');
+    if (!selectedTower && segments[0] !== 'select-tower') {
+      router.replace('/select-tower');
+      return;
     }
-
-  }, [user, segments, isLoading]);
+    
+    if (selectedTower) {
+      if (user && !inApp) {
+        const upperCaseRole = user.role.toUpperCase();
+        const targetRoute = {
+          ADMIN: '/(admin)',
+          SECURITY: '/(security)',
+          USER: '/(user)',
+        }[upperCaseRole];
+        
+        if (targetRoute) {
+          router.replace(targetRoute);
+        }
+      } 
+      else if (!user && inApp) {
+        router.replace('/login');
+      }
+    }
+  }, [user, selectedTower, segments, isLoading]); 
 
   if (isLoading) {
     return null;
@@ -107,7 +112,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <View style={[styles.container, ]}>
+        {/* 2. Reemplazamos el View por un SafeAreaView */}
+        <SafeAreaView style={styles.container}>
+          <StatusBar style='dark'></StatusBar>
           <Animated.View style={{ flex: 1, opacity: fadeContent }}>
             <AppNavigator />
           </Animated.View>
@@ -127,7 +134,7 @@ export default function RootLayout() {
               </Animated.Text>
             </LinearGradient>
           </Animated.View>
-        </View>
+        </SafeAreaView>
       </AuthProvider>
     </SafeAreaProvider>
   );
